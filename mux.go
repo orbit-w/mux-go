@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"github.com/orbit-w/meteor/bases/misc/utils"
-	"github.com/orbit-w/meteor/modules/net/network"
 	"github.com/orbit-w/meteor/modules/net/transport"
 	"github.com/orbit-w/mux-go/metadata"
 	"io"
@@ -106,7 +105,7 @@ func (mux *Multiplexer) recvLoop() {
 
 		closeErr := ErrCancel
 		if err != nil {
-			if !(err == io.EOF || network.IsClosedConnError(err)) {
+			if !(err == io.EOF || IsErrCanceled(err)) {
 				closeErr = err
 				log.Println(fmt.Errorf("conn disconnected: %s", err.Error()))
 			}
@@ -191,6 +190,7 @@ func handleDataClientSide(mux *Multiplexer, in *Msg) {
 func handleDataServerSide(mux *Multiplexer, in *Msg) {
 	switch in.Type {
 	case MessageStart:
+		fmt.Println("MessageStart")
 		if mux.virtualConns.Exist(in.Id) {
 			return
 		}

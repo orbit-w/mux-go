@@ -3,6 +3,7 @@ package mux
 import (
 	"errors"
 	"fmt"
+	"strings"
 )
 
 /*
@@ -12,9 +13,13 @@ import (
 */
 
 var (
-	ErrCancel   = errors.New("transport_err code: context canceled")
+	ErrCancel   = errors.New("context canceled")
 	ErrConnDone = errors.New("error_the_conn_is_done")
 )
+
+func IsErrCanceled(err error) bool {
+	return err != nil && strings.Contains(err.Error(), "context canceled")
+}
 
 func NewStreamBufSetErr(err error) error {
 	return errors.New(fmt.Sprintf("NewStream set failed: %s", err.Error()))

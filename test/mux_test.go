@@ -22,9 +22,9 @@ func Test_MuxSend(t *testing.T) {
 	Serve(t, host)
 
 	conn := transport.DialContextWithOps(context.Background(), host)
-	mux := mux.NewMultiplexer(context.Background(), conn)
+	multiplexer := mux.NewMultiplexer(context.Background(), conn)
 
-	vc, err := mux.NewVirtualConn(context.Background())
+	vc, err := multiplexer.NewVirtualConn(context.Background())
 	assert.NoError(t, err)
 
 	go func() {
@@ -45,6 +45,30 @@ func Test_MuxSend(t *testing.T) {
 	err = vc.CloseSend()
 	assert.NoError(t, err)
 	time.Sleep(time.Second)
+}
+
+func Test_CloseMux(t *testing.T) {
+	host := "127.0.0.1:6800"
+	Serve(t, host)
+	conn := transport.DialContextWithOps(context.Background(), host)
+	multiplexer := mux.NewMultiplexer(context.Background(), conn)
+
+	vc, err := multiplexer.NewVirtualConn(context.Background())
+	assert.NoError(t, err)
+
+	go func() {
+		for {
+			in, err := vc.Recv(context.Background())
+			if err != nil {
+				log.Println("conn read cli vc failed: ", err.Error())
+				break
+			}
+			fmt.Println(string(in))
+		}
+	}()
+
+	multiplexer.Close()
+	time.Sleep(time.Second * 5)
 }
 
 func Serve(t assert.TestingT, host string) {

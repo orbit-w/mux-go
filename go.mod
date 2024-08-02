@@ -3,7 +3,7 @@ module github.com/orbit-w/mux-go
 go 1.20
 
 require (
-	github.com/orbit-w/meteor v0.0.0-20240801154321-530daa335be1
+	github.com/orbit-w/meteor v0.0.0-20240802160309-a4fa47f19a99
 	github.com/stretchr/testify v1.9.0
 )
 
