@@ -27,7 +27,7 @@ func Benchmark_StreamSend_Test(b *testing.B) {
 	conn := transport.DialContextWithOps(context.Background(), host)
 	mux := mux.NewMultiplexer(context.Background(), conn)
 
-	stream, err := mux.NewVirtualConn(context.Background())
+	vc, err := mux.NewVirtualConn(context.Background())
 	assert.NoError(b, err)
 
 	b.Run("BenchmarkStreamSend", func(b *testing.B) {
@@ -35,7 +35,7 @@ func Benchmark_StreamSend_Test(b *testing.B) {
 		b.StartTimer()
 		defer b.StopTimer()
 		for i := 0; i < b.N; i++ {
-			_ = stream.Send([]byte{1})
+			_ = vc.Send([]byte{1})
 		}
 	})
 

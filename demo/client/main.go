@@ -21,14 +21,14 @@ func main() {
 	conn := transport.DialContextWithOps(context.Background(), host)
 	mux := mux.NewMultiplexer(context.Background(), conn)
 
-	stream, err := mux.NewVirtualConn(context.Background())
+	vc, err := mux.NewVirtualConn(context.Background())
 	if err != nil {
 		panic(err)
 	}
 
-	err = stream.Send([]byte("hello, server"))
+	err = vc.Send([]byte("hello, server"))
 
-	err = stream.CloseSend()
+	err = vc.CloseSend()
 
 	// Create a channel to listen for OS signals
 	sigChan := make(chan os.Signal, 1)

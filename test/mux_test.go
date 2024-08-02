@@ -24,25 +24,25 @@ func Test_MuxSend(t *testing.T) {
 	conn := transport.DialContextWithOps(context.Background(), host)
 	mux := mux.NewMultiplexer(context.Background(), conn)
 
-	stream, err := mux.NewVirtualConn(context.Background())
+	vc, err := mux.NewVirtualConn(context.Background())
 	assert.NoError(t, err)
 
 	go func() {
 		for {
-			in, err := stream.Recv(context.Background())
+			in, err := vc.Recv(context.Background())
 			if err != nil {
-				log.Println("conn read cli stream failed: ", err.Error())
+				log.Println("conn read cli vc failed: ", err.Error())
 				break
 			}
 			fmt.Println(string(in))
 		}
 	}()
 
-	err = stream.Send([]byte("hello, server"))
+	err = vc.Send([]byte("hello, server"))
 	assert.NoError(t, err)
-	err = stream.Send([]byte("hello, server"))
+	err = vc.Send([]byte("hello, server"))
 	assert.NoError(t, err)
-	err = stream.CloseSend()
+	err = vc.CloseSend()
 	assert.NoError(t, err)
 	time.Sleep(time.Second)
 }
