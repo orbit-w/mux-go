@@ -31,7 +31,7 @@ func Test_MuxSend(t *testing.T) {
 		for {
 			in, err := stream.Recv(context.Background())
 			if err != nil {
-				log.Println("conn read stream failed: ", err.Error())
+				log.Println("conn read cli stream failed: ", err.Error())
 				break
 			}
 			fmt.Println(string(in))
@@ -54,7 +54,7 @@ func Serve(t assert.TestingT, host string) {
 			for {
 				in, err := conn.Recv(context.Background())
 				if err != nil {
-					log.Println("conn read stream failed: ", err.Error())
+					log.Println("conn read server stream failed: ", err.Error())
 					break
 				}
 				fmt.Println(string(in))

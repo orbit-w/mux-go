@@ -29,6 +29,4 @@ const (
 	MessageRaw = iota
 	MessageStart
 	MessageFin
-
-	MessageCliHalfClosedAck
 )

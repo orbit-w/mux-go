@@ -104,7 +104,7 @@ func (mux *Multiplexer) recvLoop() {
 			_ = mux.conn.Close()
 		}
 
-		closeErr := io.EOF
+		closeErr := ErrCancel
 		if err != nil {
 			if !(err == io.EOF || network.IsClosedConnError(err)) {
 				closeErr = err
@@ -155,7 +155,7 @@ func (mux *Multiplexer) handleVirtualConn(conn *VirtualConn) {
 
 		if _, exist := mux.virtualConns.GetAndDel(conn.Id()); exist {
 			err := conn.rb.GetErr()
-			if err == nil {
+			if err == nil || err == io.EOF {
 				conn.sendMsgFin()
 			}
 		}
@@ -180,8 +180,7 @@ func handleDataClientSide(mux *Multiplexer, in *Msg) {
 				v.put(in.Data)
 			}
 		}
-	case MessageCliHalfClosedAck,
-		MessageFin:
+	case MessageFin:
 		stream, ok := mux.virtualConns.GetAndDel(in.Id)
 		if ok {
 			stream.OnClose(io.EOF)
@@ -215,15 +214,10 @@ func handleDataServerSide(mux *Multiplexer, in *Msg) {
 	case MessageRaw:
 		streamId := in.Id
 		if in.End {
-			vc, ok := mux.virtualConns.GetAndDel(streamId)
+			vc, ok := mux.virtualConns.Get(streamId)
 			if ok {
 				vc.OnClose(io.EOF)
 			}
-
-			_ = vc.sendMsg(&Msg{
-				Type: MessageCliHalfClosedAck,
-				Id:   streamId,
-			})
 			return
 		}
 
