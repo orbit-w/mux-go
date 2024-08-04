@@ -18,7 +18,7 @@ type Msg struct {
 }
 
 func (f *Codec) Encode(msg *Msg) packet.IPacket {
-	w := packet.Writer()
+	w := packet.Writer(1 + 1 + 8 + len(msg.Data))
 	w.WriteInt8(msg.Type)
 	w.WriteBool(msg.End)
 	w.WriteInt64(msg.Id)

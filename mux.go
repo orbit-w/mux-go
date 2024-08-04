@@ -190,7 +190,6 @@ func handleDataClientSide(mux *Multiplexer, in *Msg) {
 func handleDataServerSide(mux *Multiplexer, in *Msg) {
 	switch in.Type {
 	case MessageStart:
-		fmt.Println("MessageStart")
 		if mux.virtualConns.Exist(in.Id) {
 			return
 		}

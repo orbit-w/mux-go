@@ -22,12 +22,12 @@ var (
 
 func Benchmark_StreamSend_Test(b *testing.B) {
 	host := "127.0.0.1:6800"
-	Serve(b, host)
+	Serve(b, host, false)
 
 	conn := transport.DialContextWithOps(context.Background(), host)
-	mux := mux.NewMultiplexer(context.Background(), conn)
+	multiplexer := mux.NewMultiplexer(context.Background(), conn)
 
-	vc, err := mux.NewVirtualConn(context.Background())
+	vc, err := multiplexer.NewVirtualConn(context.Background())
 	assert.NoError(b, err)
 
 	b.Run("BenchmarkStreamSend", func(b *testing.B) {
@@ -35,6 +35,29 @@ func Benchmark_StreamSend_Test(b *testing.B) {
 		b.StartTimer()
 		defer b.StopTimer()
 		for i := 0; i < b.N; i++ {
+			_ = vc.Send([]byte{1})
+		}
+	})
+
+	b.StopTimer()
+	time.Sleep(time.Second * 5)
+	//_ = conn.Close()
+}
+
+func Benchmark_ConcurrencyStreamSend_Test(b *testing.B) {
+	host := "127.0.0.1:6800"
+	Serve(b, host, false)
+
+	b.RunParallel(func(pb *testing.PB) {
+		conn := transport.DialContextWithOps(context.Background(), host)
+		multiplexer := mux.NewMultiplexer(context.Background(), conn)
+		vc, err := multiplexer.NewVirtualConn(context.Background())
+		assert.NoError(b, err)
+		b.ResetTimer()
+		b.StartTimer()
+		b.ReportAllocs()
+
+		for pb.Next() {
 			_ = vc.Send([]byte{1})
 		}
 	})

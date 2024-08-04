@@ -1,7 +1,7 @@
 github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c=
 github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
-github.com/orbit-w/meteor v0.0.0-20240802160309-a4fa47f19a99 h1:o6/98RdhNPhWS6R3ys+ga9rNDY/FboJNJjAXytdzagA=
-github.com/orbit-w/meteor v0.0.0-20240802160309-a4fa47f19a99/go.mod h1:4TUU0xXESnS7z0wryv1hhv3mloB53zJlYW5Ur/9KelE=
+github.com/orbit-w/meteor v0.0.0-20240804152717-86c4ba9d7397 h1:4sR9uL97CQW2Jix5UPK+jJB++Lv3js6gBNohCiIH43c=
+github.com/orbit-w/meteor v0.0.0-20240804152717-86c4ba9d7397/go.mod h1:4TUU0xXESnS7z0wryv1hhv3mloB53zJlYW5Ur/9KelE=
 github.com/pmezard/go-difflib v1.0.0 h1:4DBwDE0NGyQoBHbLQYPwSUPoCMWR5BEzIk/f1lZbAQM=
 github.com/pmezard/go-difflib v1.0.0/go.mod h1:iKH77koFhYxTK1pcRnkKkqfTogsbg7gZNVY4sRDYZ/4=
 github.com/stretchr/testify v1.9.0 h1:HtqpIVDClZ4nwg75+f6Lvsy/wHu+3BoSGCbBAcpTsTg=
