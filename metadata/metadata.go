@@ -11,8 +11,13 @@ import (
    @2023 11月 周日 17:15
 */
 
-type metaDataKey struct{}
+type (
+	metaInKey  struct{}
+	metaOutKey struct{}
+)
 
+// MD is a mapping from metadata keys to values.
+// MD 是附加传输的上下文信息
 type MD map[string]any
 
 func New(kvs map[string]any) MD {
@@ -34,21 +39,32 @@ func (ins *MD) Get(key string) (v any, exist bool) {
 	return
 }
 
-func NewMetaContext(father context.Context, m map[string]any) context.Context {
+// NewIncomingContext creates a new context with incoming md attached.
+// Note: md must not be modified after calling this function.
+// Note: md 不能在调用此函数后被修改
+func NewIncomingContext(father context.Context, m map[string]any) context.Context {
 	md := New(m)
-	return context.WithValue(father, metaDataKey{}, md)
+	return context.WithValue(father, metaInKey{}, md)
 }
 
-func GetValue(ctx context.Context, key string) (v any, exist bool) {
-	md, ok := FromMetaContext(ctx)
+// NewOutContext creates a new context with outgoing md attached.
+// Note: md must not be modified after calling this function.
+// Note: md 不能在调用此函数后被修改
+func NewOutContext(father context.Context, m map[string]any) context.Context {
+	md := New(m)
+	return context.WithValue(father, metaOutKey{}, md)
+}
+
+func FromIncomingContext(ctx context.Context) (md MD, ok bool) {
+	md, ok = ctx.Value(metaInKey{}).(MD)
 	if !ok {
 		return nil, false
 	}
-	return md.Get(key)
+	return
 }
 
-func FromMetaContext(ctx context.Context) (md MD, ok bool) {
-	md, ok = ctx.Value(metaDataKey{}).(MD)
+func FromOutContext(ctx context.Context) (md MD, ok bool) {
+	md, ok = ctx.Value(metaOutKey{}).(MD)
 	if !ok {
 		return nil, false
 	}

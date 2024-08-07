@@ -16,8 +16,8 @@ func Test_FromMetaContext(t *testing.T) {
 		"key1": "value1",
 		"key2": "value2",
 	})
-	ctx := NewMetaContext(context.Background(), md)
-	md2, ok := FromMetaContext(ctx)
+	ctx := NewOutContext(context.Background(), md)
+	md2, ok := FromOutContext(ctx)
 	if !ok {
 		t.Fatal("metadata not exist")
 	}
