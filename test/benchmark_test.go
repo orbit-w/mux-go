@@ -5,6 +5,8 @@ import (
 	"github.com/orbit-w/meteor/modules/net/transport"
 	"github.com/orbit-w/mux-go"
 	"github.com/stretchr/testify/assert"
+	"io"
+	"log"
 	"sync"
 	"testing"
 	"time"
@@ -51,8 +53,28 @@ func Benchmark_ConcurrencyStreamSend_Test(b *testing.B) {
 	b.RunParallel(func(pb *testing.PB) {
 		conn := transport.DialContextWithOps(context.Background(), host)
 		multiplexer := mux.NewMultiplexer(context.Background(), conn)
+		//defer func() {
+		//	multiplexer.Close()
+		//}()
 		vc, err := multiplexer.NewVirtualConn(context.Background())
 		assert.NoError(b, err)
+		go func() {
+			for {
+				in, err := vc.Recv(context.Background())
+				if err != nil {
+					if err == io.EOF {
+						log.Println("client conn read complete...")
+					} else {
+						log.Println("conn read cli vc failed: ", err.Error())
+					}
+					break
+				}
+				if string(in) != "hello, client" {
+					panic("invalid message")
+				}
+			}
+		}()
+
 		b.ResetTimer()
 		b.StartTimer()
 		b.ReportAllocs()
