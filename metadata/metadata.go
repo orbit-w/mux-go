@@ -3,7 +3,6 @@ package metadata
 import (
 	"context"
 	"encoding/json"
-	"strings"
 )
 
 /*
@@ -14,21 +13,38 @@ import (
 
 type metaDataKey struct{}
 
-type MD map[string]string
+type MD map[string]any
 
-func (ins *MD) GetValue(key string) (v string, exist bool) {
-	key = strings.ToLower(key)
+func New(kvs map[string]any) MD {
+	md := MD{}
+	for k, v := range kvs {
+		md[k] = v
+	}
+	return md
+}
+
+func (ins *MD) Set(key string, value any) {
+	md := *ins
+	md[key] = value
+}
+
+func (ins *MD) Get(key string) (v any, exist bool) {
 	md := *ins
 	v, exist = md[key]
 	return
 }
 
-func NewMetaContext(father context.Context, m map[string]string) context.Context {
-	md := MD{}
-	for k, v := range m {
-		md[strings.ToLower(k)] = v
-	}
+func NewMetaContext(father context.Context, m map[string]any) context.Context {
+	md := New(m)
 	return context.WithValue(father, metaDataKey{}, md)
+}
+
+func GetValue(ctx context.Context, key string) (v any, exist bool) {
+	md, ok := FromMetaContext(ctx)
+	if !ok {
+		return nil, false
+	}
+	return md.Get(key)
 }
 
 func FromMetaContext(ctx context.Context) (md MD, ok bool) {
