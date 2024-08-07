@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/orbit-w/meteor/bases/misc/utils"
+	"github.com/orbit-w/meteor/bases/net/packet"
 	"github.com/orbit-w/meteor/modules/net/transport"
 	"github.com/orbit-w/mux-go/metadata"
 	"io"
@@ -60,7 +61,7 @@ func (mux *Multiplexer) NewVirtualConn(ctx context.Context) (IConn, error) {
 
 	vc := virtualConn(ctx, id, mux.conn, mux)
 
-	md, _ := metadata.FromMetaContext(ctx)
+	md, _ := metadata.FromOutContext(ctx)
 	data, err := metadata.Marshal(md)
 	if err != nil {
 		return nil, err
@@ -72,7 +73,7 @@ func (mux *Multiplexer) NewVirtualConn(ctx context.Context) (IConn, error) {
 		Data: data,
 	})
 
-	defer fp.Return()
+	defer packet.Return(fp)
 
 	if err = vc.conn.Send(fp.Data()); err != nil {
 		return nil, NewStreamBufSetErr(err)
@@ -202,12 +203,12 @@ func handleDataServerSide(mux *Multiplexer, in *Msg) {
 				Id:   in.Id,
 			})
 			_ = mux.conn.Send(pack.Data())
-			pack.Return()
+			packet.Return(pack)
 			log.Println("[TcpServer] [func:handleStartFrame] metadata unmarshal failed: ", err.Error())
 			return
 		}
 
-		ctx := metadata.NewMetaContext(mux.ctx, md)
+		ctx := metadata.NewIncomingContext(mux.ctx, md)
 		mux.acceptVirtualConn(ctx, mux.conn, in.Id)
 
 	case MessageRaw:

@@ -1,6 +1,6 @@
 package mux
 
-import "github.com/orbit-w/meteor/bases/packet"
+import "github.com/orbit-w/meteor/bases/net/packet"
 
 /*
    @Author: orbit-w
@@ -31,7 +31,7 @@ func (f *Codec) Encode(msg *Msg) packet.IPacket {
 
 func (f *Codec) Decode(data []byte) (Msg, error) {
 	reader := packet.Reader(data)
-	defer reader.Return()
+	defer packet.Return(reader)
 	msg := Msg{}
 	ft, err := reader.ReadInt8()
 	if err != nil {
