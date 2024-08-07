@@ -20,23 +20,27 @@ type Server struct {
 	handle func(conn IServerConn) error
 }
 
-// Serve 以默认配置启动AgentStream服务
-// 业务侧只需要break/return即可，不需要调用conn.Close()，系统会自动关闭虚拟链接
+// Serve 以默认配置启动服务
+// 业务侧只需要break/return即可，不需要调用 IServerConn.Close()，系统会自动关闭虚拟链接
 func (s *Server) Serve(addr string, handle func(conn IServerConn) error) error {
-	conf := DefaultConfig()
+	conf := DefaultServerConfig()
 	return s.ServeByConfig(addr, handle, conf)
 }
 
-func (s *Server) ServeByConfig(addr string, handle func(conn IServerConn) error, conf *Config) error {
+// ServeByConfig 以指定配置启动服务
+// 业务侧只需要break/return即可，不需要调用 IServerConn.Close()，系统会自动关闭虚拟链接
+func (s *Server) ServeByConfig(addr string, handle func(conn IServerConn) error, conf *MuxServerConfig) error {
 	s.handle = handle
 	ctx, cancel := context.WithCancel(context.Background())
 	s.ctx = ctx
 	s.cancel = cancel
+	parseServerConfig(&conf)
 
-	ts, err := transport.Serve("tcp", addr, func(conn transport.IConn) {
+	tConf := conf.toTransportConfig()
+	ts, err := transport.ServeByConfig("tcp", addr, func(conn transport.IConn) {
 		mux := newMultiplexer(s.ctx, conn, false, s)
 		mux.recvLoop()
-	})
+	}, tConf)
 	if err != nil {
 		return err
 	}
@@ -51,7 +55,7 @@ func (s *Server) Stop() error {
 	return nil
 }
 
-type Config struct {
+type MuxServerConfig struct {
 	MaxIncomingPacket uint32
 	IsGzip            bool
 	ReadTimeout       time.Duration
@@ -59,11 +63,39 @@ type Config struct {
 	DialTimeout       time.Duration
 }
 
-func DefaultConfig() *Config {
-	return &Config{
+func (conf *MuxServerConfig) toTransportConfig() *transport.Config {
+	return &transport.Config{
+		MaxIncomingPacket: conf.MaxIncomingPacket,
+		IsGzip:            conf.IsGzip,
+		ReadTimeout:       conf.ReadTimeout,
+		WriteTimeout:      conf.WriteTimeout,
+	}
+}
+
+func parseServerConfig(conf **MuxServerConfig) {
+	if *conf == nil {
+		*conf = DefaultServerConfig()
+	}
+
+	if (*conf).ReadTimeout <= 0 {
+		(*conf).ReadTimeout = ReadTimeout
+	}
+
+	if (*conf).WriteTimeout <= 0 {
+		(*conf).WriteTimeout = WriteTimeout
+	}
+
+	if (*conf).MaxIncomingPacket <= 0 {
+		(*conf).MaxIncomingPacket = network.MaxIncomingPacket
+	}
+}
+
+func DefaultServerConfig() *MuxServerConfig {
+	return &MuxServerConfig{
 		MaxIncomingPacket: network.MaxIncomingPacket,
 		IsGzip:            false,
 		ReadTimeout:       ReadTimeout,
 		DialTimeout:       DialTimeout,
+		WriteTimeout:      WriteTimeout,
 	}
 }

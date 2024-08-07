@@ -6,21 +6,21 @@ package mux
    @2024 7月 周日 19:23
 */
 
-type ClientConfig struct {
-	MaxVirtualConns uint32 //最大流数
+type MuxClientConfig struct {
+	MaxVirtualConns int //最大流数
 }
 
 const (
 	maxVirtualConns = 200
 )
 
-func DefaultClientConfig() ClientConfig {
-	return ClientConfig{
+func DefaultClientConfig() MuxClientConfig {
+	return MuxClientConfig{
 		MaxVirtualConns: maxVirtualConns,
 	}
 }
 
-func parseConfig(params ...ClientConfig) ClientConfig {
+func parseConfig(params ...MuxClientConfig) MuxClientConfig {
 	if len(params) == 0 {
 		return DefaultClientConfig()
 	}

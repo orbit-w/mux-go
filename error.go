@@ -13,8 +13,9 @@ import (
 */
 
 var (
-	ErrCancel   = errors.New("context canceled")
-	ErrConnDone = errors.New("error_the_conn_is_done")
+	ErrCancel             = errors.New("context canceled")
+	ErrConnDone           = errors.New("error_the_conn_is_done")
+	ErrVirtualConnUpLimit = errors.New("error_virtual_conn_up_limit")
 )
 
 func IsErrCanceled(err error) bool {

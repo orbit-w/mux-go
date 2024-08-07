@@ -33,11 +33,13 @@ type Multiplexer struct {
 	ctx          context.Context
 	cancel       context.CancelFunc
 
-	server *Server
+	conf   MuxClientConfig //client side config
+	server *Server         //server side
 }
 
-func NewMultiplexer(f context.Context, conn transport.IConn) IMux {
-	mux := newMultiplexer(f, conn, true, nil)
+func NewMultiplexer(f context.Context, conn transport.IConn, ops ...MuxClientConfig) IMux {
+	conf := parseConfig(ops...)
+	mux := newCliMultiplexer(f, conn, conf)
 	go mux.recvLoop()
 	return mux
 }
@@ -47,7 +49,7 @@ func newMultiplexer(f context.Context, conn transport.IConn, isClient bool, serv
 	mux := &Multiplexer{
 		isClient:     isClient,
 		conn:         conn,
-		virtualConns: newConns(),
+		virtualConns: newConns(0),
 		ctx:          ctx,
 		cancel:       cancel,
 		codec:        new(Codec),
@@ -56,15 +58,32 @@ func newMultiplexer(f context.Context, conn transport.IConn, isClient bool, serv
 	return mux
 }
 
+func newCliMultiplexer(f context.Context, conn transport.IConn, conf MuxClientConfig) *Multiplexer {
+	ctx, cancel := context.WithCancel(f)
+	mux := &Multiplexer{
+		isClient:     true,
+		conn:         conn,
+		virtualConns: newConns(conf.MaxVirtualConns),
+		ctx:          ctx,
+		cancel:       cancel,
+		codec:        new(Codec),
+		conf:         conf,
+	}
+	return mux
+}
+
 func (mux *Multiplexer) NewVirtualConn(ctx context.Context) (IConn, error) {
-	id := mux.virtualConns.Id()
-
-	vc := virtualConn(ctx, id, mux.conn, mux)
-
 	md, _ := metadata.FromOutContext(ctx)
 	data, err := metadata.Marshal(md)
 	if err != nil {
 		return nil, err
+	}
+
+	id := mux.virtualConns.Id()
+	vc := virtualConn(ctx, id, mux.conn, mux)
+
+	if !mux.virtualConns.Reg(id, vc) {
+		return nil, ErrVirtualConnUpLimit
 	}
 
 	fp := mux.codec.Encode(&Msg{
@@ -76,10 +95,9 @@ func (mux *Multiplexer) NewVirtualConn(ctx context.Context) (IConn, error) {
 	defer packet.Return(fp)
 
 	if err = vc.conn.Send(fp.Data()); err != nil {
+		mux.virtualConns.Del(id)
 		return nil, NewStreamBufSetErr(err)
 	}
-
-	mux.virtualConns.Reg(id, vc)
 	return vc, nil
 }
 

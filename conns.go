@@ -12,15 +12,17 @@ import (
 */
 
 type VirtualConns struct {
-	idx     atomic.Int64
-	rw      sync.RWMutex
-	streams map[int64]*VirtualConn
+	idx   atomic.Int64
+	max   int
+	rw    sync.RWMutex
+	conns map[int64]*VirtualConn
 }
 
-func newConns() *VirtualConns {
+func newConns(max int) *VirtualConns {
 	return &VirtualConns{
-		rw:      sync.RWMutex{},
-		streams: make(map[int64]*VirtualConn),
+		max:   max,
+		rw:    sync.RWMutex{},
+		conns: make(map[int64]*VirtualConn),
 	}
 }
 
@@ -30,39 +32,44 @@ func (ins *VirtualConns) Id() int64 {
 
 func (ins *VirtualConns) Get(id int64) (*VirtualConn, bool) {
 	ins.rw.RLock()
-	s, ok := ins.streams[id]
+	s, ok := ins.conns[id]
 	ins.rw.RUnlock()
 	return s, ok
 }
 
 func (ins *VirtualConns) Exist(id int64) (exist bool) {
 	ins.rw.RLock()
-	_, exist = ins.streams[id]
+	_, exist = ins.conns[id]
 	ins.rw.RUnlock()
 	return
 }
 
 func (ins *VirtualConns) Len() int {
-	return len(ins.streams)
+	return len(ins.conns)
 }
 
-func (ins *VirtualConns) Reg(id int64, s *VirtualConn) {
+func (ins *VirtualConns) Reg(id int64, s *VirtualConn) bool {
 	ins.rw.Lock()
-	ins.streams[id] = s
+	if ins.max != 0 && len(ins.conns) >= ins.max {
+		ins.rw.Unlock()
+		return false
+	}
+	ins.conns[id] = s
 	ins.rw.Unlock()
+	return true
 }
 
 func (ins *VirtualConns) Del(id int64) {
 	ins.rw.Lock()
-	delete(ins.streams, id)
+	delete(ins.conns, id)
 	ins.rw.Unlock()
 }
 
 func (ins *VirtualConns) GetAndDel(id int64) (*VirtualConn, bool) {
 	ins.rw.Lock()
-	s, exist := ins.streams[id]
+	s, exist := ins.conns[id]
 	if exist {
-		delete(ins.streams, id)
+		delete(ins.conns, id)
 	}
 	ins.rw.Unlock()
 	return s, exist
@@ -70,8 +77,8 @@ func (ins *VirtualConns) GetAndDel(id int64) (*VirtualConn, bool) {
 
 func (ins *VirtualConns) Range(iter func(stream *VirtualConn)) {
 	ins.rw.RLock()
-	for k := range ins.streams {
-		stream := ins.streams[k]
+	for k := range ins.conns {
+		stream := ins.conns[k]
 		iter(stream)
 	}
 	ins.rw.RUnlock()
@@ -80,9 +87,9 @@ func (ins *VirtualConns) Range(iter func(stream *VirtualConn)) {
 func (ins *VirtualConns) Close(onClose func(stream *VirtualConn)) {
 	ins.rw.Lock()
 	defer ins.rw.Unlock()
-	for k := range ins.streams {
-		stream := ins.streams[k]
+	for k := range ins.conns {
+		stream := ins.conns[k]
 		onClose(stream)
 	}
-	ins.streams = make(map[int64]*VirtualConn)
+	ins.conns = make(map[int64]*VirtualConn)
 }
