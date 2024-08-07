@@ -4,6 +4,9 @@ It relies on an underlying connection to provide reliability and ordering.
 The initial purpose of the design was to solve the problem of how to reuse a physical link with a virtual link when multiple clients are connected to the server in the game server,
 thereby reducing the resource consumption of the server.
 
+mux-go 是一个基于golang 语言的简单的多路复用库，它依赖于底层连接提供可靠性和排序。
+是N条虚拟链接复用一条物理链路的设计，初衷是解决在游戏服务器中多个客户端连接到服务器时如何复用物理链路的问题，从而减少服务器的资源消耗。
+
 ## How it works
 
 ### Server ###
