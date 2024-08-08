@@ -19,9 +19,9 @@ import (
 func main() {
 	host := "127.0.0.1:6800"
 	conn := transport.DialContextWithOps(context.Background(), host)
-	mux := mux.NewMultiplexer(context.Background(), conn)
+	multiplexer := mux.NewMultiplexer(context.Background(), conn)
 
-	vc, err := mux.NewVirtualConn(context.Background())
+	vc, err := multiplexer.NewVirtualConn(context.Background())
 	if err != nil {
 		panic(err)
 	}

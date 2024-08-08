@@ -10,6 +10,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"io"
 	"log"
+	"sync"
 	"sync/atomic"
 	"testing"
 	"time"
@@ -53,6 +54,32 @@ func Test_CloseMux(t *testing.T) {
 	time.Sleep(time.Second)
 	multiplexer.Close()
 	time.Sleep(time.Second * 5)
+}
+
+func Test_MaxVC(t *testing.T) {
+	host := "127.0.0.1:6800"
+	Serve(t, host, true)
+
+	conn := transport.DialContextWithOps(context.Background(), host)
+	multiplexer := mux.NewMultiplexer(context.Background(), conn, mux.DefaultClientConfig())
+
+	v := atomic.Uint32{}
+	wg := sync.WaitGroup{}
+	for i := 0; i < 100; i++ {
+		wg.Add(1)
+		go func() {
+			for j := 0; j < 100; j++ {
+				_, err := multiplexer.NewVirtualConn(context.Background())
+				if err == nil {
+					v.Add(1)
+				}
+			}
+			wg.Done()
+		}()
+	}
+	wg.Wait()
+	fmt.Println(v.Load())
+	multiplexer.Close()
 }
 
 func Test_BatchSend(t *testing.T) {
