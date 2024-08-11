@@ -127,7 +127,7 @@ func (vc *VirtualConn) sendMsg(msg *Msg) error {
 }
 
 // 远程发送关闭信号
-func (vc *VirtualConn) sendMsgFin() {
+func (vc *VirtualConn) sendToClientNtfFin() {
 	msg := Msg{
 		Type: MessageFin,
 		Id:   vc.Id(),

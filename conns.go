@@ -45,6 +45,8 @@ func (ins *VirtualConns) Exist(id int64) (exist bool) {
 }
 
 func (ins *VirtualConns) Len() int {
+	ins.rw.RLock()
+	defer ins.rw.RUnlock()
 	return len(ins.conns)
 }
 

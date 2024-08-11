@@ -174,12 +174,13 @@ func (mux *Multiplexer) handleVirtualConn(conn *VirtualConn) {
 		if _, exist := mux.virtualConns.GetAndDel(conn.Id()); exist {
 			err := conn.rb.GetErr()
 			if err == nil || err == io.EOF {
-				conn.sendMsgFin()
+				conn.sendToClientNtfFin()
 			}
 		}
 
 		// Close the stream
 		// Simultaneously disconnect the input and output of virtual connections
+		// 确保同时掐断虚拟连接的输入和输出
 		conn.OnClose(io.EOF)
 	}()
 

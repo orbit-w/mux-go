@@ -37,6 +37,7 @@ func Test_MuxSend(t *testing.T) {
 	time.Sleep(time.Second)
 }
 
+// Mux 优雅退出测试
 func Test_GracefulClose(t *testing.T) {
 	host := "127.0.0.1:6800"
 	Serve(t, host, true)
@@ -47,6 +48,7 @@ func Test_GracefulClose(t *testing.T) {
 	time.Sleep(time.Minute * 5)
 }
 
+// Mux Close 关闭测试
 func Test_CloseMux(t *testing.T) {
 	host := "127.0.0.1:6800"
 	Serve(t, host, true)
@@ -56,6 +58,7 @@ func Test_CloseMux(t *testing.T) {
 	time.Sleep(time.Second * 5)
 }
 
+// Mux 虚拟链接最大数量限制在并发情况下是否生效测试
 func Test_MaxVC(t *testing.T) {
 	host := "127.0.0.1:6800"
 	Serve(t, host, true)
@@ -82,7 +85,9 @@ func Test_MaxVC(t *testing.T) {
 	multiplexer.Close()
 }
 
-func Test_BatchSend(t *testing.T) {
+// Mux virtual conn send and recv test
+// 虚拟链接批量发送和接收测试
+func Test_VirtualConnBatchSend(t *testing.T) {
 	host := "127.0.0.1:6800"
 	Serve(t, host, false)
 	conn := transport.DialContextWithOps(context.Background(), host)
