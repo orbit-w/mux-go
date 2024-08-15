@@ -1,15 +1,76 @@
-# Multiplexer
-mux-go is a multiplexing library for Golang.
-It relies on an underlying connection to provide reliability and ordering.
-The initial purpose of the design was to solve the problem of how to reuse a physical link with a virtual link when multiple clients are connected to the server in the game server,
-thereby reducing the resource consumption of the server.
 
-mux-go 是一个基于golang 语言的简单的多路复用库，它依赖于底层连接提供可靠性和排序。
-是N条虚拟链接复用一条物理链路的设计，初衷是解决在游戏服务器中多个客户端连接到服务器时如何复用物理链路的问题，从而减少服务器的资源消耗。
+# mux-go
 
-## How it works
+`mux-go` 是一个用于多路复用虚拟连接的 Go 语言库。它允许在单个物理连接上创建多个虚拟连接，从而提高网络通信的效率和并发性能。
 
-### Server ###
+## 特性
+
+- 支持创建和管理多个虚拟连接
+- 提供高效的并发处理
+- 通过最小化锁的粒度来提高性能
+- 支持客户端和服务端模式
+
+## 安装
+
+使用 `go get` 命令安装：
+
+```sh
+go get github.com/orbit-w/mux-go
+```
+
+## 使用方法
+
+### 创建多路复用器
+
+```go
+import (
+    "context"
+    "github.com/orbit-w/mux-go"
+    "github.com/orbit-w/meteor/modules/net/transport"
+)
+
+func main() {
+    conn := transport.DialContextWithOps(context.Background(), "localhost:8080")
+    mux := mux.NewMultiplexer(context.Background(), conn)
+    // 使用 mux 进行虚拟连接的创建和管理
+}
+```
+
+### 创建虚拟连接
+
+```go
+vc, err := mux.NewVirtualConn(context.Background())
+if err != nil {
+    log.Fatalf("Failed to create virtual connection: %v", err)
+}
+// 使用 vc 进行数据传输
+```
+
+### 关闭多路复用器
+
+```go
+mux.Close()
+```
+
+## 接口说明
+
+### IConn 接口
+
+`IConn` 接口定义了虚拟连接的基本操作：
+
+- `Send(data []byte) error`：发送数据
+- `Recv(ctx context.Context) ([]byte, error)`：接收数据
+- `CloseSend() error`：关闭发送方向
+
+### Multiplexer 类型
+
+`Multiplexer` 类型用于管理虚拟连接：
+
+- `NewVirtualConn(ctx context.Context) (IConn, error)`：创建新的虚拟连接
+- `Close()`：关闭多路复用器
+
+
+### Server demo ###
 
 ```go
 
@@ -70,7 +131,7 @@ func main() {
 
 ```
 
-### Client ###
+### Client demo ###
 
 ```go
 
@@ -119,6 +180,4 @@ func main() {
 	// Exit the program
 	os.Exit(0)
 }
-
-
 ```
