@@ -20,6 +20,12 @@ func DefaultClientConfig() MuxClientConfig {
 	}
 }
 
+func NewClientConfig(maxVirtualConns int) MuxClientConfig {
+	return MuxClientConfig{
+		MaxVirtualConns: maxVirtualConns,
+	}
+}
+
 func parseConfig(params ...MuxClientConfig) MuxClientConfig {
 	if len(params) == 0 {
 		return DefaultClientConfig()
