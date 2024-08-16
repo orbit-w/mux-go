@@ -18,12 +18,14 @@ type IConn interface {
 }
 
 type ConnWrapper struct {
+	idx int64
 	mux.IConn
 	cancel func()
 }
 
-func newConnWrapper(conn mux.IConn, cancel func()) IConn {
+func wrapConn(conn mux.IConn, _idx int64, cancel func()) IConn {
 	return &ConnWrapper{
+		idx:    _idx,
 		IConn:  conn,
 		cancel: cancel,
 	}

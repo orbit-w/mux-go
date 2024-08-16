@@ -4,10 +4,11 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/orbit-w/meteor/bases/container/priority_queue"
+	pq "github.com/orbit-w/meteor/bases/container/priority_queue"
 	"github.com/orbit-w/meteor/modules/net/transport"
 	"github.com/orbit-w/mux-go"
 	"sync"
+	"sync/atomic"
 )
 
 /*
@@ -17,12 +18,15 @@ import (
 */
 
 type Multiplexers struct {
+	state    atomic.Uint32
 	rw       sync.RWMutex
 	host     string
 	muxIdx   int
+	connIdx  atomic.Int64
 	size     int //mux的数量
 	maxConns int //mux对应的最大虚拟连接数
-	pq       *priority_queue.PriorityQueue[int, mux.IMux, int]
+	pq       *pq.PriorityQueue[int, mux.IMux, int]
+	tempMap  sync.Map
 }
 
 func NewMultiplexers(host string, size, connsCount int) *Multiplexers {
@@ -30,7 +34,8 @@ func NewMultiplexers(host string, size, connsCount int) *Multiplexers {
 		host:     host,
 		size:     size,
 		maxConns: connsCount,
-		pq:       priority_queue.New[int, mux.IMux, int](),
+		pq:       pq.New[int, mux.IMux, int](),
+		tempMap:  sync.Map{},
 	}
 
 	for i := 0; i < size; i++ {
@@ -61,7 +66,7 @@ func (m *Multiplexers) Dial() (IConn, error) {
 		return m.newTempConn()
 	}
 
-	mw := newConnWrapper(vc, func() {
+	iConn := wrapConn(vc, m.connId(), func() {
 		m.rw.Lock()
 		defer m.rw.Unlock()
 		m.pq.UpdatePriorityOp(idx, func(s int) int {
@@ -72,7 +77,7 @@ func (m *Multiplexers) Dial() (IConn, error) {
 	m.pq.UpdatePriorityOp(idx, func(s int) int {
 		return s + 1
 	})
-	return mw, nil
+	return iConn, nil
 }
 
 // The DialEdge method does not strictly prioritize selecting the multiplexer with the fewest virtual connections to create a new virtual connection.
@@ -101,9 +106,10 @@ func (m *Multiplexers) DialEdge() (IConn, error) {
 		return nil, err
 	}
 
-	mw := newConnWrapper(vc, func() {
+	mw := wrapConn(vc, m.connId(), func() {
 		m.rw.Lock()
 		defer m.rw.Unlock()
+		//TODO: pq 有竞态风险，可能为nil
 		m.pq.UpdatePriorityOp(idx, func(s int) int {
 			return s - 1
 		})
@@ -118,7 +124,31 @@ func (m *Multiplexers) DialEdge() (IConn, error) {
 }
 
 func (m *Multiplexers) Close() {
+	if !m.state.CompareAndSwap(StateNormal, StateStopped) {
+		return
+	}
 
+	m.rw.Lock()
+	if m.pq != nil {
+		if !m.pq.Empty() {
+			for {
+				_, multiplexer, exist := m.pq.Pop()
+				if !exist {
+					break
+				}
+				multiplexer.Close()
+			}
+		}
+		m.pq = nil
+	}
+	m.rw.Unlock()
+
+	m.tempMap.Range(func(_, value any) bool {
+		conn := value.(IConn)
+		_ = conn.Close()
+		return true
+	})
+	m.tempMap = sync.Map{}
 }
 
 func (m *Multiplexers) newTempConn() (IConn, error) {
@@ -130,8 +160,14 @@ func (m *Multiplexers) newTempConn() (IConn, error) {
 	if err != nil {
 		return nil, err
 	}
-	mw := newConnWrapper(vc, func() {
+	idx := m.connId()
+	vConn := wrapConn(vc, idx, func() {
 		multiplexer.Close()
 	})
-	return mw, nil
+	m.tempMap.Store(idx, vConn)
+	return vConn, nil
+}
+
+func (m *Multiplexers) connId() int64 {
+	return m.connIdx.Add(1)
 }
