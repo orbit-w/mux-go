@@ -139,7 +139,7 @@ func (m *Multiplexers) Close() {
 				multiplexer.Close()
 			}
 		}
-		m.pq = nil
+		m.pq = pq.New[int, mux.IMux, int]()
 	}
 	m.rw.Unlock()
 

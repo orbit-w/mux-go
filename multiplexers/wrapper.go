@@ -3,6 +3,7 @@ package multiplexers
 import (
 	"context"
 	"github.com/orbit-w/mux-go"
+	"sync/atomic"
 )
 
 /*
@@ -18,8 +19,9 @@ type IConn interface {
 }
 
 type ConnWrapper struct {
-	idx int64
 	mux.IConn
+	state  atomic.Uint32
+	idx    int64
 	cancel func()
 }
 
@@ -32,6 +34,10 @@ func wrapConn(conn mux.IConn, _idx int64, cancel func()) IConn {
 }
 
 func (c *ConnWrapper) Close() error {
+	if !c.state.CompareAndSwap(StateNormal, StateStopped) {
+		return nil
+	}
+
 	if c.IConn != nil {
 		_ = c.IConn.CloseSend()
 	}
