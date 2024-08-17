@@ -82,8 +82,8 @@ func (mux *Multiplexer) NewVirtualConn(ctx context.Context) (IConn, error) {
 	id := mux.virtualConns.Id()
 	vc := virtualConn(ctx, id, mux.conn, mux)
 
-	if !mux.virtualConns.Reg(id, vc) {
-		return nil, ErrVirtualConnUpLimit
+	if err = mux.virtualConns.Reg(id, vc); err != nil {
+		return nil, err
 	}
 
 	fp := mux.codec.Encode(&Msg{
@@ -102,7 +102,7 @@ func (mux *Multiplexer) NewVirtualConn(ctx context.Context) (IConn, error) {
 }
 
 func (mux *Multiplexer) Close() {
-	if mux.state.CompareAndSwap(StateMuxNormal, StateMuxStopped) {
+	if mux.state.CompareAndSwap(StateMuxRunning, StateMuxStopped) {
 		if mux.conn != nil {
 			_ = mux.conn.Close()
 		}
@@ -129,7 +129,7 @@ func (mux *Multiplexer) recvLoop() {
 				log.Println(fmt.Errorf("conn disconnected: %s", err.Error()))
 			}
 		}
-		mux.virtualConns.Close(func(stream *VirtualConn) {
+		mux.virtualConns.OnClose(func(stream *VirtualConn) {
 			stream.OnClose(closeErr)
 		})
 	}()
@@ -159,7 +159,7 @@ func (mux *Multiplexer) recvLoop() {
 // 业务侧只需要break/return即可
 func (mux *Multiplexer) acceptVirtualConn(ctx context.Context, conn transport.IConn, id int64) {
 	vc := virtualConn(ctx, id, conn, mux)
-	mux.virtualConns.Reg(id, vc)
+	_ = mux.virtualConns.Reg(id, vc)
 	utils.GoRecoverPanic(func() {
 		mux.handleVirtualConn(vc)
 	})
