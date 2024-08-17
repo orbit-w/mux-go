@@ -14,6 +14,7 @@ import (
 type VirtualConns struct {
 	idx   atomic.Int64
 	max   int
+	err   error
 	rw    sync.RWMutex
 	conns map[int64]*VirtualConn
 }
@@ -50,15 +51,18 @@ func (ins *VirtualConns) Len() int {
 	return len(ins.conns)
 }
 
-func (ins *VirtualConns) Reg(id int64, s *VirtualConn) bool {
+func (ins *VirtualConns) Reg(id int64, s *VirtualConn) error {
 	ins.rw.Lock()
+	if ins.err != nil {
+		return ins.err
+	}
 	if ins.max != 0 && len(ins.conns) >= ins.max {
 		ins.rw.Unlock()
-		return false
+		return ErrVirtualConnUpLimit
 	}
 	ins.conns[id] = s
 	ins.rw.Unlock()
-	return true
+	return nil
 }
 
 func (ins *VirtualConns) Del(id int64) {
@@ -86,9 +90,10 @@ func (ins *VirtualConns) Range(iter func(stream *VirtualConn)) {
 	ins.rw.RUnlock()
 }
 
-func (ins *VirtualConns) Close(onClose func(stream *VirtualConn)) {
+func (ins *VirtualConns) OnClose(onClose func(stream *VirtualConn)) {
 	ins.rw.Lock()
 	defer ins.rw.Unlock()
+	ins.err = ErrCancel
 	for k := range ins.conns {
 		stream := ins.conns[k]
 		onClose(stream)
