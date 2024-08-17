@@ -16,7 +16,7 @@ const (
 )
 
 const (
-	StateMuxNormal = iota
+	StateMuxRunning = iota
 	StateMuxStopped
 )
 
