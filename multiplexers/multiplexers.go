@@ -18,7 +18,7 @@ import (
 */
 
 type Multiplexers struct {
-	state    atomic.Uint32
+	state    uint32
 	rw       sync.RWMutex
 	host     string
 	muxIdx   int
@@ -51,8 +51,12 @@ func NewMultiplexers(host string, size, connsCount int) *Multiplexers {
 func (m *Multiplexers) Dial() (IConn, error) {
 	m.rw.Lock()
 	defer m.rw.Unlock()
+	if m.state == StateStopped {
+		return nil, ErrMultiplexersStopped
+	}
+
 	if m.pq.Empty() {
-		return nil, fmt.Errorf("no available multiplexers")
+		return nil, ErrNoAvailableMultiplexers
 	}
 
 	// Get the multiplexer with the least number of virtual connections
@@ -69,9 +73,11 @@ func (m *Multiplexers) Dial() (IConn, error) {
 	iConn := wrapConn(vc, m.connId(), func() {
 		m.rw.Lock()
 		defer m.rw.Unlock()
-		m.pq.UpdatePriorityOp(idx, func(s int) int {
-			return s - 1
-		})
+		if m.pq != nil {
+			m.pq.UpdatePriorityOp(idx, func(s int) int {
+				return s - 1
+			})
+		}
 	})
 
 	m.pq.UpdatePriorityOp(idx, func(s int) int {
@@ -109,10 +115,11 @@ func (m *Multiplexers) DialEdge() (IConn, error) {
 	mw := wrapConn(vc, m.connId(), func() {
 		m.rw.Lock()
 		defer m.rw.Unlock()
-		//TODO: pq 有竞态风险，可能为nil
-		m.pq.UpdatePriorityOp(idx, func(s int) int {
-			return s - 1
-		})
+		if m.pq != nil {
+			m.pq.UpdatePriorityOp(idx, func(s int) int {
+				return s - 1
+			})
+		}
 	})
 
 	m.rw.Lock()
@@ -124,11 +131,12 @@ func (m *Multiplexers) DialEdge() (IConn, error) {
 }
 
 func (m *Multiplexers) Close() {
-	if !m.state.CompareAndSwap(StateNormal, StateStopped) {
+	m.rw.Lock()
+	if m.state == StateStopped {
+		m.rw.Unlock()
 		return
 	}
 
-	m.rw.Lock()
 	if m.pq != nil {
 		if !m.pq.Empty() {
 			for {
@@ -139,8 +147,9 @@ func (m *Multiplexers) Close() {
 				multiplexer.Close()
 			}
 		}
-		m.pq = pq.New[int, mux.IMux, int]()
+		m.pq = nil
 	}
+	m.state = StateStopped
 	m.rw.Unlock()
 
 	m.tempMap.Range(func(_, value any) bool {
