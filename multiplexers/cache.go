@@ -29,6 +29,10 @@ func (cc *connCache) Store(id int64, conn IConn) error {
 
 func (cc *connCache) OnClose(iter func(conn IConn)) {
 	cc.rw.RLock()
+	if cc.err != nil {
+		cc.rw.RUnlock()
+		return
+	}
 	cc.err = mux.ErrCancel
 	t := make([]IConn, 0, len(cc.conns))
 	for k := range cc.conns {

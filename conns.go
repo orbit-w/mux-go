@@ -53,15 +53,14 @@ func (ins *VirtualConns) Len() int {
 
 func (ins *VirtualConns) Reg(id int64, s *VirtualConn) error {
 	ins.rw.Lock()
+	defer ins.rw.Unlock()
 	if ins.err != nil {
 		return ins.err
 	}
 	if ins.max != 0 && len(ins.conns) >= ins.max {
-		ins.rw.Unlock()
 		return ErrVirtualConnUpLimit
 	}
 	ins.conns[id] = s
-	ins.rw.Unlock()
 	return nil
 }
 

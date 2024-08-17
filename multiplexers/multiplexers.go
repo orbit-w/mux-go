@@ -18,7 +18,7 @@ import (
 */
 
 type Multiplexers struct {
-	state    uint32
+	state    atomic.Int32
 	rw       sync.RWMutex
 	host     string
 	muxIdx   int
@@ -51,9 +51,6 @@ func NewMultiplexers(host string, size, connsCount int) *Multiplexers {
 func (m *Multiplexers) Dial() (IConn, error) {
 	m.rw.Lock()
 	defer m.rw.Unlock()
-	if m.state == StateStopped {
-		return nil, ErrMultiplexersStopped
-	}
 
 	if m.pq.Empty() {
 		return nil, ErrNoAvailableMultiplexers
@@ -131,12 +128,11 @@ func (m *Multiplexers) DialEdge() (IConn, error) {
 }
 
 func (m *Multiplexers) Close() {
-	m.rw.Lock()
-	if m.state == StateStopped {
-		m.rw.Unlock()
+	if !m.state.CompareAndSwap(StateNone, StateClosed) {
 		return
 	}
 
+	m.rw.Lock()
 	if m.pq != nil {
 		if !m.pq.Empty() {
 			for {
@@ -149,7 +145,6 @@ func (m *Multiplexers) Close() {
 		}
 		m.pq = nil
 	}
-	m.state = StateStopped
 	m.rw.Unlock()
 
 	m.tempMap.OnClose(func(value IConn) {
