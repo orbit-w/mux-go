@@ -162,7 +162,10 @@ func (m *Multiplexers) newTempConn() (IConn, error) {
 	vConn := wrapConn(vc, idx, func() {
 		multiplexer.Close()
 	})
-	m.tempMap.Store(idx, vConn)
+
+	if err = m.tempMap.Store(idx, vConn); err != nil {
+		return nil, err
+	}
 	return vConn, nil
 }
 
