@@ -26,7 +26,7 @@ type Multiplexers struct {
 	size     int //mux的数量
 	maxConns int //mux对应的最大虚拟连接数
 	pq       *pq.PriorityQueue[int, mux.IMux, int]
-	tempMap  sync.Map
+	tempMap  *connCache
 }
 
 func NewMultiplexers(host string, size, connsCount int) *Multiplexers {
@@ -35,7 +35,7 @@ func NewMultiplexers(host string, size, connsCount int) *Multiplexers {
 		size:     size,
 		maxConns: connsCount,
 		pq:       pq.New[int, mux.IMux, int](),
-		tempMap:  sync.Map{},
+		tempMap:  newConnCache(),
 	}
 
 	for i := 0; i < size; i++ {
@@ -143,12 +143,10 @@ func (m *Multiplexers) Close() {
 	}
 	m.rw.Unlock()
 
-	m.tempMap.Range(func(_, value any) bool {
+	m.tempMap.OnClose(func(value IConn) {
 		conn := value.(IConn)
 		_ = conn.Close()
-		return true
 	})
-	m.tempMap = sync.Map{}
 }
 
 func (m *Multiplexers) newTempConn() (IConn, error) {
