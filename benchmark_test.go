@@ -1,9 +1,8 @@
-package test
+package mux
 
 import (
 	"context"
 	"github.com/orbit-w/meteor/modules/net/transport"
-	"github.com/orbit-w/mux-go"
 	"github.com/stretchr/testify/assert"
 	"io"
 	"log"
@@ -19,7 +18,7 @@ import (
 */
 
 var (
-	once = new(sync.Once)
+	testOnce = new(sync.Once)
 )
 
 func Benchmark_StreamSend_Test(b *testing.B) {
@@ -27,7 +26,7 @@ func Benchmark_StreamSend_Test(b *testing.B) {
 	Serve(b, host, false)
 
 	conn := transport.DialContextWithOps(context.Background(), host)
-	multiplexer := mux.NewMultiplexer(context.Background(), conn)
+	multiplexer := NewMultiplexer(context.Background(), conn)
 
 	vc, err := multiplexer.NewVirtualConn(context.Background())
 	assert.NoError(b, err)
@@ -52,7 +51,7 @@ func Benchmark_ConcurrencyStreamSend_Test(b *testing.B) {
 
 	b.RunParallel(func(pb *testing.PB) {
 		conn := transport.DialContextWithOps(context.Background(), host)
-		multiplexer := mux.NewMultiplexer(context.Background(), conn)
+		multiplexer := NewMultiplexer(context.Background(), conn)
 		//defer func() {
 		//	multiplexer.Close()
 		//}()

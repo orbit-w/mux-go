@@ -22,6 +22,9 @@ jobs:
       - name: Run tests
         run: go test -coverprofile=coverage.txt
 
+      - name: Verify coverage file
+        run: ls -l coverage.txt
+
       - name: Upload results to Codecov
         uses: codecov/codecov-action@v4
         with:

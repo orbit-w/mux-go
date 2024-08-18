@@ -1,11 +1,10 @@
-package test
+package mux
 
 import (
 	"context"
 	"fmt"
 	"github.com/google/uuid"
 	"github.com/orbit-w/meteor/modules/net/transport"
-	"github.com/orbit-w/mux-go"
 	"github.com/orbit-w/mux-go/metadata"
 	"github.com/stretchr/testify/assert"
 	"io"
@@ -64,7 +63,7 @@ func Test_MaxVC(t *testing.T) {
 	Serve(t, host, true)
 
 	conn := transport.DialContextWithOps(context.Background(), host)
-	multiplexer := mux.NewMultiplexer(context.Background(), conn, mux.DefaultClientConfig())
+	multiplexer := NewMultiplexer(context.Background(), conn, DefaultClientConfig())
 
 	v := atomic.Uint32{}
 	wg := sync.WaitGroup{}
@@ -91,7 +90,7 @@ func Test_VirtualConnBatchSend(t *testing.T) {
 	host := "127.0.0.1:6800"
 	Serve(t, host, false)
 	conn := transport.DialContextWithOps(context.Background(), host)
-	multiplexer := mux.NewMultiplexer(context.Background(), conn)
+	multiplexer := NewMultiplexer(context.Background(), conn)
 
 	vc, err := multiplexer.NewVirtualConn(context.Background())
 	assert.NoError(t, err)
@@ -142,8 +141,7 @@ func Test_VirtualConnBatchSend(t *testing.T) {
 
 func Test_Metadata(t *testing.T) {
 	host := "127.0.0.1:6800"
-	server := new(mux.Server)
-	err := server.Serve(host, func(conn mux.IServerConn) error {
+	ServeWithHandler(t, host, func(conn IServerConn) error {
 		md, _ := metadata.FromIncomingContext(conn.Context())
 		fmt.Println(md)
 
@@ -164,9 +162,8 @@ func Test_Metadata(t *testing.T) {
 		}
 		return nil
 	})
-	assert.NoError(t, err)
 	conn := transport.DialContextWithOps(context.Background(), host)
-	multiplexer := mux.NewMultiplexer(context.Background(), conn)
+	multiplexer := NewMultiplexer(context.Background(), conn)
 
 	id := uuid.New().String()
 	fmt.Println(id)
@@ -196,9 +193,9 @@ func Test_Metadata(t *testing.T) {
 	multiplexer.Close()
 }
 
-func ClientTest(t assert.TestingT, host string, print bool) (multiplexer mux.IMux, vc mux.IConn) {
+func ClientTest(t assert.TestingT, host string, print bool) (multiplexer IMux, vc IConn) {
 	conn := transport.DialContextWithOps(context.Background(), host)
-	multiplexer = mux.NewMultiplexer(context.Background(), conn)
+	multiplexer = NewMultiplexer(context.Background(), conn)
 
 	var (
 		err error
@@ -226,9 +223,9 @@ func ClientTest(t assert.TestingT, host string, print bool) (multiplexer mux.IMu
 }
 
 func Serve(t assert.TestingT, host string, print bool) {
-	once.Do(func() {
-		server := new(mux.Server)
-		err := server.Serve(host, func(conn mux.IServerConn) error {
+	testOnce.Do(func() {
+		server := new(Server)
+		err := server.Serve(host, func(conn IServerConn) error {
 			for {
 				in, err := conn.Recv(context.Background())
 				if err != nil {
@@ -247,6 +244,14 @@ func Serve(t assert.TestingT, host string, print bool) {
 			}
 			return nil
 		})
+		assert.NoError(t, err)
+	})
+}
+
+func ServeWithHandler(t assert.TestingT, host string, handler func(conn IServerConn) error) {
+	testOnce.Do(func() {
+		server := new(Server)
+		err := server.Serve(host, handler)
 		assert.NoError(t, err)
 	})
 }
