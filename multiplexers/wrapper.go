@@ -34,7 +34,7 @@ func wrapConn(conn mux.IConn, _idx int64, cancel func()) IConn {
 }
 
 func (c *ConnWrapper) Close() error {
-	if !c.state.CompareAndSwap(StateNormal, StateStopped) {
+	if !c.state.CompareAndSwap(StateNone, StateClosed) {
 		return nil
 	}
 

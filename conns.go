@@ -80,18 +80,13 @@ func (ins *VirtualConns) GetAndDel(id int64) (*VirtualConn, bool) {
 	return s, exist
 }
 
-func (ins *VirtualConns) Range(iter func(stream *VirtualConn)) {
-	ins.rw.RLock()
-	for k := range ins.conns {
-		stream := ins.conns[k]
-		iter(stream)
-	}
-	ins.rw.RUnlock()
-}
-
 func (ins *VirtualConns) OnClose(onClose func(stream *VirtualConn)) {
 	ins.rw.Lock()
 	defer ins.rw.Unlock()
+	if ins.err != nil {
+		return
+	}
+
 	ins.err = ErrCancel
 	for k := range ins.conns {
 		stream := ins.conns[k]

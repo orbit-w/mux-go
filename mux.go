@@ -19,6 +19,11 @@ import (
    @2024 7月 周日 19:12
 */
 
+// IMux IMux.NewVirtualConn and IMux.Close do not need to strictly ensure linear execution order.
+// They are thread-safe and will not cause connection or data leaks.
+// They also will not block users on Recv.
+// IMux.NewVirtualConn 跟 IMux.Close 不需要严格的保证线性顺序执行，并发安全的，不会造成连接等数据泄漏。
+// 也不会将用户阻塞在Recv上。
 type IMux interface {
 	NewVirtualConn(ctx context.Context) (IConn, error)
 	Close()
