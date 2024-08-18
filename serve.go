@@ -85,7 +85,7 @@ func parseServerConfig(conf **MuxServerConfig) {
 		(*conf).WriteTimeout = WriteTimeout
 	}
 
-	if (*conf).MaxIncomingPacket <= 0 {
+	if (*conf).MaxIncomingPacket == 0 {
 		(*conf).MaxIncomingPacket = network.MaxIncomingPacket
 	}
 }

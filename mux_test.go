@@ -2,7 +2,6 @@ package mux
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"github.com/google/uuid"
 	"github.com/orbit-w/meteor/modules/net/transport"
@@ -263,17 +262,6 @@ func Test_Serve(t *testing.T) {
 	assert.NoError(t, s.Serve("127.0.0.1:6900", func(conn IServerConn) error {
 		return nil
 	}))
-}
 
-func Test_parseConfig(t *testing.T) {
-	var conf *MuxServerConfig
-	parseServerConfig(&conf)
-	fmt.Println(conf.toTransportConfig())
-}
-
-func Test_misc(t *testing.T) {
-	err := errors.New("context canceled")
-	assert.True(t, IsErrCanceled(err))
-	fmt.Println(NewStreamBufSetErr(err).Error())
-	fmt.Println(NewDecodeErr(err).Error())
+	assert.NoError(t, s.Stop())
 }

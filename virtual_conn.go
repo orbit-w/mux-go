@@ -75,10 +75,6 @@ func (vc *VirtualConn) Recv(ctx context.Context) ([]byte, error) {
 	return vc.rb.Recv(ctx)
 }
 
-func (vc *VirtualConn) Close() {
-	vc.rb.OnClose(ErrCancel)
-}
-
 func (vc *VirtualConn) CloseSend() error {
 	if !vc.isClient() {
 		return nil
