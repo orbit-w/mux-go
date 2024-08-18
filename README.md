@@ -3,6 +3,8 @@
 
 `mux-go` 是一个用于多路复用虚拟连接的 Go 语言库。它允许在单个物理连接上创建多个虚拟连接，从而提高网络通信的效率和并发性能。
 
+[![codecov](https://codecov.io/gh/orbit-w/mux-go/branch/master/graph/badge.svg?token=FnHuKkiGDO)](https://codecov.io/gh/orbit-w/mux-go)
+
 ## 特性
 
 - 支持创建和管理多个虚拟连接
