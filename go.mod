@@ -4,7 +4,7 @@ go 1.20
 
 require (
 	github.com/google/uuid v1.6.0
-	github.com/orbit-w/meteor v0.0.0-20240815152803-4ccd8454f10e
+	github.com/orbit-w/meteor v0.0.0-20240818013452-ff28ed6cb68a
 	github.com/stretchr/testify v1.9.0
 )
 

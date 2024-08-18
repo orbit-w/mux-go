@@ -18,7 +18,7 @@ import (
 */
 
 type Multiplexers struct {
-	state    uint32
+	state    atomic.Int32
 	rw       sync.RWMutex
 	host     string
 	muxIdx   int
@@ -26,7 +26,7 @@ type Multiplexers struct {
 	size     int //mux的数量
 	maxConns int //mux对应的最大虚拟连接数
 	pq       *pq.PriorityQueue[int, mux.IMux, int]
-	tempMap  sync.Map
+	tempMap  *connCache
 }
 
 func NewMultiplexers(host string, size, connsCount int) *Multiplexers {
@@ -35,7 +35,7 @@ func NewMultiplexers(host string, size, connsCount int) *Multiplexers {
 		size:     size,
 		maxConns: connsCount,
 		pq:       pq.New[int, mux.IMux, int](),
-		tempMap:  sync.Map{},
+		tempMap:  newConnCache(),
 	}
 
 	for i := 0; i < size; i++ {
@@ -51,9 +51,6 @@ func NewMultiplexers(host string, size, connsCount int) *Multiplexers {
 func (m *Multiplexers) Dial() (IConn, error) {
 	m.rw.Lock()
 	defer m.rw.Unlock()
-	if m.state == StateStopped {
-		return nil, ErrMultiplexersStopped
-	}
 
 	if m.pq.Empty() {
 		return nil, ErrNoAvailableMultiplexers
@@ -70,20 +67,14 @@ func (m *Multiplexers) Dial() (IConn, error) {
 		return m.newTempConn()
 	}
 
-	iConn := wrapConn(vc, m.connId(), func() {
+	conn := wrapConn(vc, m.connId(), func() {
 		m.rw.Lock()
 		defer m.rw.Unlock()
-		if m.pq != nil {
-			m.pq.UpdatePriorityOp(idx, func(s int) int {
-				return s - 1
-			})
-		}
+		m.pq.UpdatePriorityOp(idx, decrPriority)
 	})
 
-	m.pq.UpdatePriorityOp(idx, func(s int) int {
-		return s + 1
-	})
-	return iConn, nil
+	m.pq.UpdatePriorityOp(idx, incrPriority)
+	return conn, nil
 }
 
 // The DialEdge method does not strictly prioritize selecting the multiplexer with the fewest virtual connections to create a new virtual connection.
@@ -104,6 +95,10 @@ func (m *Multiplexers) DialEdge() (IConn, error) {
 	idx, multiplexer, _ := m.pq.Peek()
 	m.rw.RUnlock()
 
+	//multiplexer.NewVirtualConn and multiplexer.Close do not need to strictly ensure linear execution order. They are thread-safe and will not cause connection or data leaks.
+	//They also will not block users on Recv.
+	//multiplexer.NewVirtualConn 跟 multiplexer.Close 不需要严格的保证线性顺序执行，并发安全的，不会造成连接等数据泄漏。
+	//也不会将用户阻塞在Recv上。
 	vc, err := multiplexer.NewVirtualConn(context.Background())
 	if err != nil {
 		if errors.Is(err, mux.ErrVirtualConnUpLimit) {
@@ -112,31 +107,43 @@ func (m *Multiplexers) DialEdge() (IConn, error) {
 		return nil, err
 	}
 
-	mw := wrapConn(vc, m.connId(), func() {
+	conn := wrapConn(vc, m.connId(), func() {
 		m.rw.Lock()
 		defer m.rw.Unlock()
-		if m.pq != nil {
-			m.pq.UpdatePriorityOp(idx, func(s int) int {
-				return s - 1
-			})
-		}
+		m.pq.UpdatePriorityOp(idx, decrPriority)
 	})
 
 	m.rw.Lock()
-	m.pq.UpdatePriorityOp(idx, func(s int) int {
-		return s + 1
-	})
+	m.pq.UpdatePriorityOp(idx, incrPriority)
 	m.rw.Unlock()
-	return mw, nil
+	return conn, nil
 }
 
+// Close closes all multiplexers and virtual connections
+//
+// steps:
+// 1. Atomically sets the state to StateClosed if it is currently StateNone.Make the Close method reentrant and enhance its robustness.
+// 2. Acquires a write lock to ensure thread safety while modifying the priority queue and temporary map.
+// 3. Iterates through the priority queue, closing each multiplexer and removing it from the queue.
+// 4. Iterates through the temporary map, closing each virtual connection stored in it.
+
+// Close 关闭所有多路复用器和虚拟连接
+// 步骤：
+//
+//	1.如果当前状态是 StateNone，则以原子方式将状态设置为 StateClosed。
+//	2.获取写锁以确保在修改优先队列和临时映射时的线程安全。
+//	3.遍历优先队列，关闭每个多路复用器并将其从队列中移除。此处线程安全。
+//	4.遍历临时映射，关闭其中存储的每个虚拟连接。
 func (m *Multiplexers) Close() {
-	m.rw.Lock()
-	if m.state == StateStopped {
-		m.rw.Unlock()
+	// Atomically set the state to StateClosed if it is currently StateNone
+	if !m.state.CompareAndSwap(StateNone, StateClosed) {
 		return
 	}
 
+	// Acquire a write lock to ensure thread safety
+	m.rw.Lock()
+
+	// Iterate through the priority queue, closing each multiplexer
 	if m.pq != nil {
 		if !m.pq.Empty() {
 			for {
@@ -147,17 +154,16 @@ func (m *Multiplexers) Close() {
 				multiplexer.Close()
 			}
 		}
-		m.pq = nil
+
+		m.pq.Free()
 	}
-	m.state = StateStopped
 	m.rw.Unlock()
 
-	m.tempMap.Range(func(_, value any) bool {
+	// Iterate through the temporary map, closing each virtual connection
+	m.tempMap.OnClose(func(value IConn) {
 		conn := value.(IConn)
 		_ = conn.Close()
-		return true
 	})
-	m.tempMap = sync.Map{}
 }
 
 func (m *Multiplexers) newTempConn() (IConn, error) {
@@ -173,7 +179,10 @@ func (m *Multiplexers) newTempConn() (IConn, error) {
 	vConn := wrapConn(vc, idx, func() {
 		multiplexer.Close()
 	})
-	m.tempMap.Store(idx, vConn)
+
+	if err = m.tempMap.Store(idx, vConn); err != nil {
+		return nil, err
+	}
 	return vConn, nil
 }
 
