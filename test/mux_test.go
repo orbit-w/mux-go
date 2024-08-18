@@ -45,7 +45,7 @@ func Test_GracefulClose(t *testing.T) {
 	err := vc.CloseSend()
 	assert.NoError(t, err)
 	multiplexer.Close()
-	time.Sleep(time.Minute * 5)
+	time.Sleep(time.Second * 5)
 }
 
 // Mux Close 关闭测试
