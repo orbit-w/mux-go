@@ -78,6 +78,7 @@ func TestMultiplexers_Close(t *testing.T) {
 	wg.Wait()
 	wg2.Wait()
 	fmt.Println(count.Load(), recvCount.Load())
+	assert.Equal(t, count.Load(), recvCount.Load())
 }
 
 // Test_PQ tests the Close method of the connection wrapper.

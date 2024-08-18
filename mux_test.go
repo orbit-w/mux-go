@@ -224,7 +224,7 @@ func ClientTest(t assert.TestingT, host string, print bool) (multiplexer IMux, v
 
 func Serve(t assert.TestingT, host string, print bool) {
 	testOnce.Do(func() {
-		server := new(Server)
+		server = new(Server)
 		err := server.Serve(host, func(conn IServerConn) error {
 			for {
 				in, err := conn.Recv(context.Background())
@@ -250,7 +250,7 @@ func Serve(t assert.TestingT, host string, print bool) {
 
 func ServeWithHandler(t assert.TestingT, host string, handler func(conn IServerConn) error) {
 	testOnce.Do(func() {
-		server := new(Server)
+		server = new(Server)
 		err := server.Serve(host, handler)
 		assert.NoError(t, err)
 	})

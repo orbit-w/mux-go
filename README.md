@@ -20,6 +20,18 @@
 go get github.com/orbit-w/mux-go
 ```
 
+## Benchmark
+```
+oos: darwin
+goarch: arm64
+pkg: github.com/orbit-w/mux-go
+BenchmarkConnMux
+BenchmarkConnMux-8   	   43083	     27426 ns/op	4779.16 MB/s	  674156 B/op	       7 allocs/op
+PASS
+ok  	github.com/orbit-w/mux-go	5.556s
+```
+
+
 ## 使用方法
 
 ### 创建多路复用器

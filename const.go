@@ -9,8 +9,9 @@ import "time"
 */
 
 const (
-	ReadTimeout  = time.Second * 60
-	WriteTimeout = time.Second * 5
+	MaxIncomingPacket = 262144 //256kb
+	ReadTimeout       = time.Second * 60
+	WriteTimeout      = time.Second * 5
 
 	DialTimeout = time.Second * 15
 )

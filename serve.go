@@ -55,6 +55,10 @@ func (s *Server) Stop() error {
 	return nil
 }
 
+func (s *Server) SetHandler(handle func(conn IServerConn) error) {
+	s.handle = handle
+}
+
 type MuxServerConfig struct {
 	MaxIncomingPacket uint32
 	IsGzip            bool
@@ -92,7 +96,7 @@ func parseServerConfig(conf **MuxServerConfig) {
 
 func DefaultServerConfig() *MuxServerConfig {
 	return &MuxServerConfig{
-		MaxIncomingPacket: network.MaxIncomingPacket,
+		MaxIncomingPacket: MaxIncomingPacket,
 		IsGzip:            false,
 		ReadTimeout:       ReadTimeout,
 		DialTimeout:       DialTimeout,
