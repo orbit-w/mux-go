@@ -126,7 +126,7 @@ func Serve(t assert.TestingT, host string, print bool) {
 				in, err := conn.Recv(context.Background())
 				if err != nil {
 					if err == io.EOF {
-						log.Println("server conn read complete...")
+						//log.Println("server conn read complete...")
 					} else {
 						log.Println("conn read server stream failed: ", err.Error())
 					}

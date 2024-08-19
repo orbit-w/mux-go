@@ -2,7 +2,6 @@ package mux
 
 import (
 	"context"
-	"fmt"
 	"github.com/orbit-w/meteor/bases/misc/utils"
 	"github.com/orbit-w/meteor/bases/net/packet"
 	"github.com/orbit-w/meteor/modules/net/transport"
@@ -127,11 +126,10 @@ func (mux *Multiplexer) recvLoop() {
 			_ = mux.conn.Close()
 		}
 
-		closeErr := ErrCancel
+		closeErr := io.EOF
 		if err != nil {
 			if !(err == io.EOF || IsErrCanceled(err)) {
 				closeErr = err
-				log.Println(fmt.Errorf("conn disconnected: %s", err.Error()))
 			}
 		}
 		mux.virtualConns.OnClose(func(stream *VirtualConn) {
