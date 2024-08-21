@@ -4,7 +4,9 @@ import (
 	"context"
 	"fmt"
 	"github.com/orbit-w/meteor/modules/net/transport"
+	"github.com/orbit-w/meteor/modules/net/transport/logger"
 	"github.com/orbit-w/mux-go"
+	"github.com/spf13/viper"
 	"os"
 	"os/signal"
 	"syscall"
@@ -17,6 +19,10 @@ import (
 */
 
 func main() {
+	parseConfig()
+
+	logger.SetBaseLogger(logger.NewZapLogger())
+
 	host := "127.0.0.1:6800"
 	conn := transport.DialContextWithOps(context.Background(), host)
 	multiplexer := mux.NewMultiplexer(context.Background(), conn)
@@ -44,4 +50,20 @@ func main() {
 
 	// Exit the program
 	os.Exit(0)
+}
+
+func parseConfig() {
+	// 设置配置文件名称（不带扩展名）
+	viper.SetConfigName("config")
+
+	// 设置配置文件类型
+	viper.SetConfigType("toml")
+
+	// 添加配置文件路径
+	viper.AddConfigPath(".") // 当前目录
+
+	// 尝试读取配置文件
+	if err := viper.ReadInConfig(); err != nil {
+		panic(fmt.Sprintf("Error reading config file: %v", err))
+	}
 }
