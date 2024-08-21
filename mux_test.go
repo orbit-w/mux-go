@@ -225,7 +225,7 @@ func ClientTest(t assert.TestingT, host string, print bool) (multiplexer IMux, v
 func Serve(t assert.TestingT, host string, print bool) {
 	testOnce.Do(func() {
 		server = new(Server)
-		err := server.Serve(host, func(conn IServerConn) error {
+		err := server.ServeByConfig(host, func(conn IServerConn) error {
 			for {
 				in, err := conn.Recv(context.Background())
 				if err != nil {
@@ -243,7 +243,7 @@ func Serve(t assert.TestingT, host string, print bool) {
 				assert.NoError(t, err)
 			}
 			return nil
-		})
+		}, DevelopmentServerConfig())
 		assert.NoError(t, err)
 	})
 }
@@ -251,7 +251,7 @@ func Serve(t assert.TestingT, host string, print bool) {
 func ServeWithHandler(t assert.TestingT, host string, handler func(conn IServerConn) error) {
 	testOnce.Do(func() {
 		server = new(Server)
-		err := server.Serve(host, handler)
+		err := server.ServeByConfig(host, handler, DevelopmentServerConfig())
 		assert.NoError(t, err)
 	})
 }

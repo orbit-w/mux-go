@@ -117,6 +117,10 @@ func buildServerConfig(conf **MuxServerConfig) {
 
 }
 
+const (
+	defaultLogDir = "./logs/mux.log"
+)
+
 func DefaultServerConfig() *MuxServerConfig {
 	return &MuxServerConfig{
 		MaxIncomingPacket: MaxIncomingPacket,
@@ -125,7 +129,7 @@ func DefaultServerConfig() *MuxServerConfig {
 		DialTimeout:       DialTimeout,
 		WriteTimeout:      WriteTimeout,
 		LogLevel:          "INFO",
-		LogDir:            "./logs/mux.log",
+		LogDir:            defaultLogDir,
 	}
 }
 
@@ -137,7 +141,7 @@ func ProductionServerConfig() *MuxServerConfig {
 		DialTimeout:       DialTimeout,
 		WriteTimeout:      WriteTimeout,
 		LogLevel:          "ERROR",
-		LogDir:            "./logs/mux.log",
+		LogDir:            defaultLogDir,
 	}
 }
 
