@@ -16,14 +16,14 @@ import (
 
 func Test_parseConfig(t *testing.T) {
 	var conf *MuxServerConfig
-	parseServerConfig(&conf)
+	buildServerConfig(&conf)
 	fmt.Println(conf.toTransportConfig())
 
 	conf.ReadTimeout = -time.Second * 5
 	conf.WriteTimeout = -time.Second * 5
 	conf.DialTimeout = -time.Second * 5
 	conf.MaxIncomingPacket = 0
-	parseServerConfig(&conf)
+	buildServerConfig(&conf)
 	fmt.Println(conf.MaxIncomingPacket)
 	fmt.Println(conf.ReadTimeout)
 	fmt.Println(conf.WriteTimeout)
