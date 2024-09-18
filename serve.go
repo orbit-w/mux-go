@@ -2,9 +2,9 @@ package mux
 
 import (
 	"context"
+	"github.com/orbit-w/meteor/modules/mlog"
 	"github.com/orbit-w/meteor/modules/net/network"
 	"github.com/orbit-w/meteor/modules/net/transport"
-	zap_logger "github.com/orbit-w/meteor/modules/net/transport/logger"
 	"github.com/spf13/viper"
 	"time"
 )
@@ -40,7 +40,7 @@ func (s *Server) ServeByConfig(addr string, handle func(conn IServerConn) error,
 	conf.parse()
 
 	//根据日志等级/文件路径设置zap日志
-	zap_logger.SetBaseLogger(zap_logger.NewZapLogger())
+	mlog.SetBaseLogger(mlog.NewZapLogger())
 
 	tConf := conf.toTransportConfig()
 	ts, err := transport.ServeByConfig("tcp", addr, func(conn transport.IConn) {
@@ -87,10 +87,10 @@ func (conf *MuxServerConfig) toTransportConfig() *transport.Config {
 func (conf *MuxServerConfig) parse() {
 	//分析配置，设置viper全剧配置
 	if conf.LogDir != "" {
-		viper.Set(zap_logger.FlagLogDir, conf.LogDir)
+		viper.Set(mlog.FlagLogDir, conf.LogDir)
 	}
 
-	viper.Set(zap_logger.FlagV, conf.LogLevel)
+	viper.Set(mlog.FlagV, conf.LogLevel)
 }
 
 func buildServerConfig(conf **MuxServerConfig) {

@@ -3,8 +3,8 @@ package main
 import (
 	"context"
 	"fmt"
+	"github.com/orbit-w/meteor/modules/mlog"
 	"github.com/orbit-w/meteor/modules/net/transport"
-	"github.com/orbit-w/meteor/modules/net/transport/logger"
 	"github.com/orbit-w/mux-go"
 	"github.com/spf13/viper"
 	"os"
@@ -21,7 +21,7 @@ import (
 func main() {
 	parseConfig()
 
-	logger.SetBaseLogger(logger.NewZapLogger())
+	mlog.SetBaseLogger(mlog.NewZapLogger())
 
 	host := "127.0.0.1:6800"
 	conn := transport.DialContextWithOps(context.Background(), host)

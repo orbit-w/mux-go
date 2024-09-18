@@ -20,6 +20,11 @@ import (
    @2024 8月 周日 10:18
 */
 
+const (
+	Dev  = "DEV"
+	Prod = "PROD"
+)
+
 var (
 	testOnce = new(sync.Once)
 )
@@ -37,7 +42,7 @@ var (
 // 测试确保所有连接都正确关闭，并统计成功和接收的连接数量。
 func TestMultiplexers_Close(t *testing.T) {
 	host := "127.0.0.1:8888"
-	Serve(t, host, false)
+	Serve(t, host, false, Prod)
 	muxs := NewMultiplexers("127.0.0.1:8888", 5, 10)
 	wg := sync.WaitGroup{}
 	wg2 := sync.WaitGroup{}
@@ -118,28 +123,41 @@ func Test_PQ(t *testing.T) {
 	assert.Equal(t, item.Priority, 0)
 }
 
-func Serve(t assert.TestingT, host string, print bool) {
+func Serve(t assert.TestingT, host string, print bool, stage string) {
+	recvHandler := func(conn mux.IServerConn) error {
+		for {
+			in, err := conn.Recv(context.Background())
+			if err != nil {
+				if err == io.EOF {
+					log.Println("server conn read complete...")
+				} else {
+					log.Println("conn read server stream failed: ", err.Error())
+				}
+				break
+			}
+			if print {
+				fmt.Println(string(in))
+			}
+			err = conn.Send([]byte("hello, client"))
+			assert.NoError(t, err)
+		}
+		return nil
+	}
+
+	var muxServerConfig *mux.MuxServerConfig
+
+	switch stage {
+	case "DEV":
+		muxServerConfig = mux.DevelopmentServerConfig()
+	case "PROD":
+		muxServerConfig = mux.ProductionServerConfig()
+	default:
+		muxServerConfig = mux.DefaultServerConfig()
+	}
+
 	testOnce.Do(func() {
 		server := new(mux.Server)
-		err := server.Serve(host, func(conn mux.IServerConn) error {
-			for {
-				in, err := conn.Recv(context.Background())
-				if err != nil {
-					if err == io.EOF {
-						log.Println("server conn read complete...")
-					} else {
-						log.Println("conn read server stream failed: ", err.Error())
-					}
-					break
-				}
-				if print {
-					fmt.Println(string(in))
-				}
-				err = conn.Send([]byte("hello, client"))
-				assert.NoError(t, err)
-			}
-			return nil
-		})
+		err := server.ServeByConfig(host, recvHandler, muxServerConfig)
 		assert.NoError(t, err)
 	})
 }

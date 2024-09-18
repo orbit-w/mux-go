@@ -15,7 +15,7 @@ import (
 
 func TestVirtualConn_Send(t *testing.T) {
 	host := "127.0.0.1:6800"
-	Serve(t, host, false)
+	Serve(t, host, false, Prod)
 	conn := transport.DialContextWithOps(context.Background(), host)
 	multiplexer := NewMultiplexer(context.Background(), conn)
 
@@ -30,7 +30,7 @@ func TestVirtualConn_Send(t *testing.T) {
 
 func TestVirtualConn_CloseSend(t *testing.T) {
 	host := "127.0.0.1:6800"
-	Serve(t, host, false)
+	Serve(t, host, false, Prod)
 	conn := transport.DialContextWithOps(context.Background(), host)
 	multiplexer := NewMultiplexer(context.Background(), conn)
 

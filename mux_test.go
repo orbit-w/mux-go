@@ -21,9 +21,14 @@ import (
    @2024 8月 周四 10:16
 */
 
+const (
+	Dev  = "DEV"
+	Prod = "PROD"
+)
+
 func Test_MuxSend(t *testing.T) {
 	host := "127.0.0.1:6800"
-	Serve(t, host, true)
+	Serve(t, host, true, Dev)
 
 	_, vc := ClientTest(t, host, true)
 
@@ -39,7 +44,7 @@ func Test_MuxSend(t *testing.T) {
 // Mux 优雅退出测试
 func Test_GracefulClose(t *testing.T) {
 	host := "127.0.0.1:6800"
-	Serve(t, host, true)
+	Serve(t, host, true, Prod)
 	multiplexer, vc := ClientTest(t, host, true)
 	err := vc.CloseSend()
 	assert.NoError(t, err)
@@ -50,7 +55,7 @@ func Test_GracefulClose(t *testing.T) {
 // Mux Close 关闭测试
 func Test_CloseMux(t *testing.T) {
 	host := "127.0.0.1:6800"
-	Serve(t, host, true)
+	Serve(t, host, true, Prod)
 	multiplexer, _ := ClientTest(t, host, true)
 	time.Sleep(time.Second)
 	multiplexer.Close()
@@ -60,7 +65,7 @@ func Test_CloseMux(t *testing.T) {
 // Mux 虚拟链接最大数量限制在并发情况下是否生效测试
 func Test_MaxVC(t *testing.T) {
 	host := "127.0.0.1:6800"
-	Serve(t, host, true)
+	Serve(t, host, true, Dev)
 
 	conn := transport.DialContextWithOps(context.Background(), host)
 	multiplexer := NewMultiplexer(context.Background(), conn, DefaultClientConfig())
@@ -88,7 +93,7 @@ func Test_MaxVC(t *testing.T) {
 // 虚拟链接批量发送和接收测试
 func Test_VirtualConnBatchSend(t *testing.T) {
 	host := "127.0.0.1:6800"
-	Serve(t, host, false)
+	Serve(t, host, false, Dev)
 	conn := transport.DialContextWithOps(context.Background(), host)
 	multiplexer := NewMultiplexer(context.Background(), conn)
 
@@ -222,28 +227,41 @@ func ClientTest(t assert.TestingT, host string, print bool) (multiplexer IMux, v
 	return
 }
 
-func Serve(t assert.TestingT, host string, print bool) {
+func Serve(t assert.TestingT, host string, print bool, stage string) {
+	recvHandler := func(conn IServerConn) error {
+		for {
+			in, err := conn.Recv(context.Background())
+			if err != nil {
+				if err == io.EOF {
+					log.Println("server conn read complete...")
+				} else {
+					log.Println("conn read server stream failed: ", err.Error())
+				}
+				break
+			}
+			if print {
+				fmt.Println(string(in))
+			}
+			err = conn.Send([]byte("hello, client"))
+			assert.NoError(t, err)
+		}
+		return nil
+	}
+
+	var muxServerConfig *MuxServerConfig
+
+	switch stage {
+	case "DEV":
+		muxServerConfig = DevelopmentServerConfig()
+	case "PROD":
+		muxServerConfig = ProductionServerConfig()
+	default:
+		muxServerConfig = DefaultServerConfig()
+	}
+
 	testOnce.Do(func() {
 		server = new(Server)
-		err := server.ServeByConfig(host, func(conn IServerConn) error {
-			for {
-				in, err := conn.Recv(context.Background())
-				if err != nil {
-					if err == io.EOF {
-						log.Println("server conn read complete...")
-					} else {
-						log.Println("conn read server stream failed: ", err.Error())
-					}
-					break
-				}
-				if print {
-					fmt.Println(string(in))
-				}
-				err = conn.Send([]byte("hello, client"))
-				assert.NoError(t, err)
-			}
-			return nil
-		}, DevelopmentServerConfig())
+		err := server.ServeByConfig(host, recvHandler, muxServerConfig)
 		assert.NoError(t, err)
 	})
 }
