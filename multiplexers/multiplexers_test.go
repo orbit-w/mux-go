@@ -29,6 +29,49 @@ var (
 	testOnce = new(sync.Once)
 )
 
+func TestMultiplexers_Dial(t *testing.T) {
+	var (
+		host     = "127.0.0.1:8888"
+		complete = make(chan struct{}, 1)
+	)
+	ServeWithHandler(t, host, Prod, func(conn mux.IServerConn) error {
+		for {
+			in, err := conn.Recv(context.Background())
+			if err != nil {
+				if err == io.EOF {
+					log.Println("server conn read complete...")
+				} else {
+					log.Println("conn read server stream failed: ", err.Error())
+				}
+				break
+			}
+			fmt.Println(string(in))
+			err = conn.Send([]byte("hello, client"))
+			assert.NoError(t, err)
+		}
+		return nil
+	})
+
+	mus := NewWithDefaultConf(host)
+	conn, err := mus.Dial()
+	assert.NoError(t, err)
+
+	go func() {
+		for {
+			resp, err := conn.Recv(context.Background())
+			if err != nil {
+				break
+			}
+			fmt.Println(string(resp))
+			close(complete)
+		}
+	}()
+
+	err = conn.Send([]byte("hello, server"))
+	assert.NoError(t, err)
+	<-complete
+}
+
 // TestMultiplexers_Close tests the Close method of the Multiplexers struct.
 // It sets up a server and initializes a Multiplexers instance with multiple multiplexers.
 // The test spawns multiple goroutines to simulate concurrent virtual connections.
@@ -41,11 +84,29 @@ var (
 // 短暂延迟后，调用 Close 方法关闭所有多路复用器和虚拟连接。
 // 测试确保所有连接都正确关闭，并统计成功和接收的连接数量。
 func TestMultiplexers_Close(t *testing.T) {
-	host := "127.0.0.1:8888"
-	Serve(t, host, false, Prod)
-	muxs := NewMultiplexers("127.0.0.1:8888", 5, 10)
-	wg := sync.WaitGroup{}
-	wg2 := sync.WaitGroup{}
+	var (
+		host = "127.0.0.1:8888"
+		wg   = sync.WaitGroup{}
+		wg2  = sync.WaitGroup{}
+	)
+	ServeWithHandler(t, host, Prod, func(conn mux.IServerConn) error {
+		for {
+			_, err := conn.Recv(context.Background())
+			if err != nil {
+				if err == io.EOF {
+					log.Println("server conn read complete...")
+				} else {
+					log.Println("conn read server stream failed: ", err.Error())
+				}
+				break
+			}
+			err = conn.Send([]byte("hello, client"))
+			assert.NoError(t, err)
+		}
+		return nil
+	})
+
+	mus := NewWithDefaultConf(host)
 	bc := context.Background()
 	count := atomic.Uint32{}
 	recvCount := atomic.Uint32{}
@@ -53,7 +114,7 @@ func TestMultiplexers_Close(t *testing.T) {
 		wg.Add(1)
 		go func() {
 			for j := 0; j < 10000; j++ {
-				conn, err := muxs.Dial()
+				conn, err := mus.Dial()
 				if err == nil {
 					count.Add(1)
 					wg2.Add(1)
@@ -76,7 +137,7 @@ func TestMultiplexers_Close(t *testing.T) {
 	wg.Add(1)
 	go func() {
 		time.Sleep(time.Millisecond * 100)
-		muxs.Close()
+		mus.Close()
 		wg.Done()
 	}()
 
@@ -123,27 +184,7 @@ func Test_PQ(t *testing.T) {
 	assert.Equal(t, item.Priority, 0)
 }
 
-func Serve(t assert.TestingT, host string, print bool, stage string) {
-	recvHandler := func(conn mux.IServerConn) error {
-		for {
-			in, err := conn.Recv(context.Background())
-			if err != nil {
-				if err == io.EOF {
-					log.Println("server conn read complete...")
-				} else {
-					log.Println("conn read server stream failed: ", err.Error())
-				}
-				break
-			}
-			if print {
-				fmt.Println(string(in))
-			}
-			err = conn.Send([]byte("hello, client"))
-			assert.NoError(t, err)
-		}
-		return nil
-	}
-
+func ServeWithHandler(t assert.TestingT, host string, stage string, recvHandler func(conn mux.IServerConn) error) {
 	var muxServerConfig *mux.MuxServerConfig
 
 	switch stage {

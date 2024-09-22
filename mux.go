@@ -10,7 +10,6 @@ import (
 	"github.com/orbit-w/mux-go/metadata"
 	"io"
 	"log"
-	"runtime/debug"
 	"sync/atomic"
 )
 
@@ -169,17 +168,12 @@ func (mux *Multiplexer) recvLoop() {
 func (mux *Multiplexer) acceptVirtualConn(ctx context.Context, conn transport.IConn, id int64) {
 	vc := virtualConn(ctx, id, conn, mux)
 	_ = mux.virtualConns.Reg(id, vc)
-	utils.GoRecoverPanic(func() {
-		mux.handleVirtualConn(vc)
-	})
+	go mux.handleVirtualConn(vc)
 }
 
 func (mux *Multiplexer) handleVirtualConn(conn *VirtualConn) {
+	defer utils.RecoverPanic()
 	defer func() {
-		if r := recover(); r != nil {
-			debug.PrintStack()
-		}
-
 		if _, exist := mux.virtualConns.GetAndDel(conn.Id()); exist {
 			err := conn.rb.GetErr()
 			if err == nil || err == io.EOF {

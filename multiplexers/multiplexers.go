@@ -23,28 +23,39 @@ type Multiplexers struct {
 	host     string
 	muxIdx   int
 	connIdx  atomic.Int64
-	size     int //mux的数量
+	muxCount int //mux的数量
 	maxConns int //mux对应的最大虚拟连接数
 	pq       *pq.PriorityQueue[int, mux.IMux, int]
 	tempMap  *connCache
 }
 
-func NewMultiplexers(host string, size, connsCount int) *Multiplexers {
+func NewWithDefaultConf(host string) *Multiplexers {
+	conf := DefaultConfig()
 	m := &Multiplexers{
 		host:     host,
-		size:     size,
-		maxConns: connsCount,
+		muxCount: conf.MuxCount,
+		maxConns: conf.MuxMaxConns,
 		pq:       pq.New[int, mux.IMux, int](),
 		tempMap:  newConnCache(),
 	}
 
-	for i := 0; i < size; i++ {
+	m.init()
+	return m
+}
+
+func (m *Multiplexers) init() {
+	for i := 0; i < m.muxCount; i++ {
 		ctx := context.Background()
-		conn := transport.DialContextWithOps(ctx, host)
+		conn := transport.DialContextWithOps(ctx, m.host, &transport.DialOption{
+			MaxIncomingPacket: MaxIncomingPacket,
+		})
 		multiplexer := mux.NewMultiplexer(ctx, conn, mux.NewClientConfig(m.maxConns))
 		m.pq.Push(i, multiplexer, 0)
 	}
-	return m
+}
+
+func (m *Multiplexers) State() int32 {
+	return m.state.Load()
 }
 
 // Dial 方法严格按照绑定的最小虚拟连接数优先选择多路复用器来创建虚拟连接
@@ -169,7 +180,9 @@ func (m *Multiplexers) Close() {
 func (m *Multiplexers) newTempConn() (IConn, error) {
 	// All multiplexers are at limit, create a new one
 	ctx := context.Background()
-	conn := transport.DialContextWithOps(ctx, m.host)
+	conn := transport.DialContextWithOps(ctx, m.host, &transport.DialOption{
+		MaxIncomingPacket: MaxIncomingPacket,
+	})
 	multiplexer := mux.NewMultiplexer(ctx, conn)
 	vc, err := multiplexer.NewVirtualConn(ctx)
 	if err != nil {
