@@ -2,7 +2,6 @@ package multiplexers
 
 import (
 	"context"
-	"fmt"
 	"github.com/orbit-w/mux-go"
 	"io"
 	"log"
@@ -18,12 +17,12 @@ import (
 
 func Benchmark_ConcurrencyStreamSend_Test(b *testing.B) {
 	var (
-		total    = uint64(128 * 1024 * b.N)
-		count    = atomic.Uint64{}
-		buf      = make([]byte, 128*1024)
-		complete = make(chan struct{}, 1)
-		host     = "127.0.0.1:8888"
+		//total    = uint64(128 * 1024 * b.N)
+		count = atomic.Uint64{}
+		buf   = make([]byte, 128*1024)
+		host  = "127.0.0.1:8888"
 	)
+
 	ServeWithHandler(b, host, Prod, func(conn mux.IServerConn) error {
 		for {
 			in, err := conn.Recv(context.Background())
@@ -35,12 +34,7 @@ func Benchmark_ConcurrencyStreamSend_Test(b *testing.B) {
 				}
 				break
 			}
-			n := count.Add(uint64(len(in)))
-			fmt.Println(len(in))
-			if n >= total {
-				close(complete)
-				break
-			}
+			count.Add(uint64(len(in)))
 		}
 		return nil
 	})
@@ -61,7 +55,6 @@ func Benchmark_ConcurrencyStreamSend_Test(b *testing.B) {
 		}
 
 		for pb.Next() {
-			// 在这里编写每次迭代的基准测试逻辑
 			if err = conn.Send(buf); err != nil {
 				b.Error(err)
 				return
@@ -69,5 +62,4 @@ func Benchmark_ConcurrencyStreamSend_Test(b *testing.B) {
 		}
 	})
 
-	<-complete
 }
