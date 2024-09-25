@@ -61,6 +61,13 @@ func (s *Server) Stop() error {
 	return nil
 }
 
+func (s *Server) Addr() string {
+	if s.server != nil {
+		return s.server.Addr()
+	}
+	return ""
+}
+
 func (s *Server) SetHandler(handle func(conn IServerConn) error) {
 	s.handle = handle
 }

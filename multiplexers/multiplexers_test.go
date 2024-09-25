@@ -93,7 +93,7 @@ func TestMultiplexers_Close(t *testing.T) {
 		for {
 			_, err := conn.Recv(context.Background())
 			if err != nil {
-				if err == io.EOF {
+				if err == io.EOF || mux.IsErrCanceled(err) {
 					log.Println("server conn read complete...")
 				} else {
 					log.Println("conn read server stream failed: ", err.Error())
@@ -201,4 +201,22 @@ func ServeWithHandler(t assert.TestingT, host string, stage string, recvHandler 
 		err := server.ServeByConfig(host, recvHandler, muxServerConfig)
 		assert.NoError(t, err)
 	})
+}
+
+func serveWithHandler(t assert.TestingT, stage string, recvHandler func(conn mux.IServerConn) error) *mux.Server {
+	host := "localhost:0"
+	var muxServerConfig *mux.MuxServerConfig
+
+	switch stage {
+	case "DEV":
+		muxServerConfig = mux.DevelopmentServerConfig()
+	case "PROD":
+		muxServerConfig = mux.ProductionServerConfig()
+	default:
+		muxServerConfig = mux.DefaultServerConfig()
+	}
+	server := new(mux.Server)
+	err := server.ServeByConfig(host, recvHandler, muxServerConfig)
+	assert.NoError(t, err)
+	return server
 }
