@@ -2,8 +2,8 @@ package mux
 
 import (
 	"context"
-	"github.com/orbit-w/meteor/bases/net/packet"
 	"github.com/orbit-w/meteor/modules/net/network"
+	"github.com/orbit-w/meteor/modules/net/packet"
 	"github.com/orbit-w/meteor/modules/net/transport"
 	"sync/atomic"
 )

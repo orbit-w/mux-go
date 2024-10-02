@@ -1,6 +1,6 @@
 package mux
 
-import "github.com/orbit-w/meteor/bases/net/packet"
+import "github.com/orbit-w/meteor/modules/net/packet"
 
 /*
    @Author: orbit-w
