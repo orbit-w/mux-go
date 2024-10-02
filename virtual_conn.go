@@ -2,6 +2,7 @@ package mux
 
 import (
 	"context"
+	"fmt"
 	"github.com/orbit-w/meteor/modules/net/network"
 	"github.com/orbit-w/meteor/modules/net/packet"
 	"github.com/orbit-w/meteor/modules/net/transport"
@@ -97,11 +98,14 @@ func (vc *VirtualConn) put(in []byte) {
 func (vc *VirtualConn) send(data []byte, isLast bool) error {
 	if isLast {
 		if !vc.state.CompareAndSwap(ConnActive, ConnWriteDone) {
+			fmt.Println("1111")
 			return ErrConnDone
 		}
+		return nil
 	}
 
 	if vc.state.Load() != ConnActive {
+		fmt.Println("2222")
 		return ErrConnDone
 	}
 
