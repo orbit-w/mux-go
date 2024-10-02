@@ -18,7 +18,7 @@ type Msg struct {
 }
 
 func (f *Codec) Encode(msg *Msg) packet.IPacket {
-	w := packet.Writer(1 + 1 + 8 + len(msg.Data))
+	w := packet.WriterP(1 + 1 + 8 + len(msg.Data))
 	w.WriteInt8(msg.Type)
 	w.WriteBool(msg.End)
 	w.WriteInt64(msg.Id)
@@ -30,7 +30,7 @@ func (f *Codec) Encode(msg *Msg) packet.IPacket {
 }
 
 func (f *Codec) Decode(data []byte) (Msg, error) {
-	reader := packet.Reader(data)
+	reader := packet.ReaderP(data)
 	defer packet.Return(reader)
 	msg := Msg{}
 	ft, err := reader.ReadInt8()

@@ -8,8 +8,8 @@ import (
 	"github.com/orbit-w/meteor/modules/net/packet"
 	"github.com/orbit-w/meteor/modules/net/transport"
 	"github.com/orbit-w/mux-go/metadata"
+	"go.uber.org/zap"
 	"io"
-	"log"
 	"sync/atomic"
 )
 
@@ -119,9 +119,10 @@ func (mux *Multiplexer) Close() {
 
 func (mux *Multiplexer) recvLoop() {
 	var (
-		in  []byte
-		err error
-		ctx = context.Background()
+		in     []byte
+		err    error
+		ctx    = context.Background()
+		handle = getHandler(getName(mux))
 	)
 
 	defer func() {
@@ -156,7 +157,6 @@ func (mux *Multiplexer) recvLoop() {
 			return
 		}
 
-		handle := getHandler(getName(mux))
 		handle(mux, &msg)
 	}
 }
@@ -226,7 +226,7 @@ func handleDataServerSide(mux *Multiplexer, in *Msg) {
 			})
 			_ = mux.conn.Send(pack.Data())
 			packet.Return(pack)
-			log.Println("[TcpServer] [func:handleStartFrame] metadata unmarshal failed: ", err.Error())
+			mux.log.Error("[TcpServer] [func:handleStartFrame] metadata unmarshal failed", zap.Error(err))
 			return
 		}
 

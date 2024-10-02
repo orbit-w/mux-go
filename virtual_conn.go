@@ -95,12 +95,13 @@ func (vc *VirtualConn) put(in []byte) {
 }
 
 func (vc *VirtualConn) send(data []byte, isLast bool) error {
-	switch {
-	case isLast:
+	if isLast {
 		if !vc.state.CompareAndSwap(ConnActive, ConnWriteDone) {
 			return ErrConnDone
 		}
-	case vc.state.Load() != ConnActive:
+	}
+
+	if vc.state.Load() != ConnActive {
 		return ErrConnDone
 	}
 
