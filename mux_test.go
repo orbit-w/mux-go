@@ -29,6 +29,7 @@ const (
 func Test_MuxSend(t *testing.T) {
 	host := "127.0.0.1:6800"
 	Serve(t, host, true, Dev)
+	defer server.Stop()
 
 	_, vc := ClientTest(t, host, true)
 
@@ -45,6 +46,7 @@ func Test_MuxSend(t *testing.T) {
 func Test_GracefulClose(t *testing.T) {
 	host := "127.0.0.1:6800"
 	Serve(t, host, true, Prod)
+	defer server.Stop()
 	multiplexer, vc := ClientTest(t, host, true)
 	err := vc.CloseSend()
 	assert.NoError(t, err)
@@ -56,6 +58,7 @@ func Test_GracefulClose(t *testing.T) {
 func Test_CloseMux(t *testing.T) {
 	host := "127.0.0.1:6800"
 	Serve(t, host, true, Prod)
+	defer server.Stop()
 	multiplexer, _ := ClientTest(t, host, true)
 	time.Sleep(time.Second)
 	multiplexer.Close()

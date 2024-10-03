@@ -16,23 +16,23 @@ import (
 */
 
 type Server struct {
-	server transport.IServer
-	ctx    context.Context
-	cancel context.CancelFunc
-	handle func(conn IServerConn) error
+	server     transport.IServer
+	ctx        context.Context
+	cancel     context.CancelFunc
+	handleLoop func(conn IServerConn) error
 }
 
 // Serve 以默认配置启动服务
 // 业务侧只需要break/return即可，不需要调用 IServerConn.Close()，系统会自动关闭虚拟链接
-func (s *Server) Serve(addr string, handle func(conn IServerConn) error) error {
+func (s *Server) Serve(addr string, handleLoop func(conn IServerConn) error) error {
 	conf := DefaultServerConfig()
-	return s.ServeByConfig(addr, handle, conf)
+	return s.ServeByConfig(addr, handleLoop, conf)
 }
 
 // ServeByConfig 以指定配置启动服务
 // 业务侧只需要break/return即可，不需要调用 IServerConn.Close()，系统会自动关闭虚拟链接
-func (s *Server) ServeByConfig(addr string, handle func(conn IServerConn) error, conf *MuxServerConfig) error {
-	s.handle = handle
+func (s *Server) ServeByConfig(addr string, handleLoop func(conn IServerConn) error, conf *MuxServerConfig) error {
+	s.handleLoop = handleLoop
 	ctx, cancel := context.WithCancel(context.Background())
 	s.ctx = ctx
 	s.cancel = cancel
@@ -69,7 +69,7 @@ func (s *Server) Addr() string {
 }
 
 func (s *Server) SetHandler(handle func(conn IServerConn) error) {
-	s.handle = handle
+	s.handleLoop = handle
 }
 
 type MuxServerConfig struct {

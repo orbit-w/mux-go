@@ -1,0 +1,1 @@
+2024-10-03T10:55:44.876+0800	ERROR	[Transport TcpClient] Send data failed	{"error": "set tcp 127.0.0.1:60317: use of closed network connection"}

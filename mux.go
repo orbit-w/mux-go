@@ -104,7 +104,7 @@ func (mux *Multiplexer) NewVirtualConn(ctx context.Context) (IConn, error) {
 
 	if err = vc.conn.Send(fp.Data()); err != nil {
 		mux.virtualConns.Del(id)
-		return nil, NewStreamBufSetErr(err)
+		return nil, newStreamBufSetErr(err)
 	}
 	return vc, nil
 }
@@ -133,7 +133,7 @@ func (mux *Multiplexer) recvLoop() {
 
 		closeErr := ErrCancel
 		if err != nil {
-			if !(err == io.EOF || IsErrCanceled(err)) {
+			if !(err == io.EOF || isErrCanceled(err)) {
 				closeErr = err
 				mux.log.Error(fmt.Sprintf("conn disconnected: %s", err.Error()))
 			}
@@ -153,7 +153,7 @@ func (mux *Multiplexer) recvLoop() {
 
 		msg, err = mux.codec.DecodeV2(in)
 		if err != nil {
-			err = NewDecodeErr(err)
+			err = newDecodeErr(err)
 			return
 		}
 
@@ -187,7 +187,7 @@ func (mux *Multiplexer) handleVirtualConn(conn *VirtualConn) {
 		conn.OnClose(io.EOF)
 	}()
 
-	handle := mux.server.handle
+	handle := mux.server.handleLoop
 	if err := handle(conn); err != nil {
 		//TODO:
 	}

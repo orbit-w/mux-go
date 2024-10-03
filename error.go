@@ -18,14 +18,14 @@ var (
 	ErrVirtualConnUpLimit = errors.New("error_virtual_conn_up_limit")
 )
 
-func IsErrCanceled(err error) bool {
+func isErrCanceled(err error) bool {
 	return err != nil && strings.Contains(err.Error(), "context canceled")
 }
 
-func NewStreamBufSetErr(err error) error {
+func newStreamBufSetErr(err error) error {
 	return errors.New(fmt.Sprintf("NewStream set failed: %s", err.Error()))
 }
 
-func NewDecodeErr(err error) error {
+func newDecodeErr(err error) error {
 	return errors.New(fmt.Sprintf("decode data failed: %s", err.Error()))
 }

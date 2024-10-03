@@ -38,7 +38,7 @@ func benchmarkEcho(b *testing.B, size, num int) {
 		for {
 			in, err := conn.Recv(context.Background())
 			if err != nil {
-				if !(err == io.EOF || mux.IsErrCanceled(err)) {
+				if !(err == io.EOF || mux.isErrCanceled(err)) {
 					log.Println("conn read server stream failed: ", err.Error())
 				}
 				break
