@@ -38,13 +38,12 @@ func benchmarkEcho(b *testing.B, size, num int) {
 		for {
 			in, err := conn.Recv(context.Background())
 			if err != nil {
-				if !(err == io.EOF || mux.isErrCanceled(err)) {
+				if !(err == io.EOF || mux.IsErrCanceled(err)) {
 					log.Println("conn read server stream failed: ", err.Error())
 				}
 				break
 			}
-			t := count.Add(uint64(len(in)))
-			if t >= total {
+			if count.Add(uint64(len(in))) >= total {
 				select {
 				case complete <- struct{}{}:
 				default:

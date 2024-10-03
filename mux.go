@@ -133,7 +133,7 @@ func (mux *Multiplexer) recvLoop() {
 
 		closeErr := ErrCancel
 		if err != nil {
-			if !(err == io.EOF || isErrCanceled(err)) {
+			if !(err == io.EOF || IsErrCanceled(err)) {
 				closeErr = err
 				mux.log.Error(fmt.Sprintf("conn disconnected: %s", err.Error()))
 			}

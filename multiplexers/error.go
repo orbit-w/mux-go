@@ -9,6 +9,5 @@ import "errors"
 */
 
 var (
-	ErrMultiplexersStopped     = errors.New("multiplexers is stopped")
 	ErrNoAvailableMultiplexers = errors.New("no available multiplexers")
 )

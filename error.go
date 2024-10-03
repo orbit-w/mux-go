@@ -18,7 +18,7 @@ var (
 	ErrVirtualConnUpLimit = errors.New("error_virtual_conn_up_limit")
 )
 
-func isErrCanceled(err error) bool {
+func IsErrCanceled(err error) bool {
 	return err != nil && strings.Contains(err.Error(), "context canceled")
 }
 

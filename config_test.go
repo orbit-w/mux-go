@@ -35,7 +35,7 @@ func Test_parseConfig(t *testing.T) {
 
 func Test_misc(t *testing.T) {
 	err := errors.New("context canceled")
-	assert.True(t, isErrCanceled(err))
+	assert.True(t, IsErrCanceled(err))
 	fmt.Println(newStreamBufSetErr(err).Error())
 	fmt.Println(newDecodeErr(err).Error())
 }

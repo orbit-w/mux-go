@@ -93,7 +93,7 @@ func TestMultiplexers_Close(t *testing.T) {
 		for {
 			_, err := conn.Recv(context.Background())
 			if err != nil {
-				if err == io.EOF || mux.isErrCanceled(err) {
+				if err == io.EOF || mux.IsErrCanceled(err) {
 					log.Println("server conn read complete...")
 				} else {
 					log.Println("conn read server stream failed: ", err.Error())
