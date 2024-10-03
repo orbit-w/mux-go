@@ -1,12 +1,22 @@
 package mux
 
-import "github.com/orbit-w/meteor/modules/net/packet"
+import (
+	"encoding/binary"
+	"errors"
+	"github.com/orbit-w/meteor/modules/net/packet"
+)
 
 /*
    @Author: orbit-w
    @File: streamer
    @2024 7月 周日 16:22
 */
+
+const (
+	typeFlagLength     = 1
+	endFlagLength      = 1
+	streamIdFlagLength = 8
+)
 
 type Codec struct{}
 
@@ -53,6 +63,29 @@ func (f *Codec) Decode(data []byte) (Msg, error) {
 	msg.End = end
 	if len(reader.Remain()) > 0 {
 		msg.Data = reader.CopyRemain()
+	}
+	return msg, nil
+}
+
+func (f *Codec) DecodeV2(data []byte) (Msg, error) {
+	msg := Msg{}
+	var off int
+	if len(data) < typeFlagLength+endFlagLength+streamIdFlagLength {
+		return msg, errors.New("decode failed")
+	}
+
+	ft := int8(data[0])
+	end := data[1] == byte(1)
+	off += 2
+	sid := binary.BigEndian.Uint64(data[off : off+streamIdFlagLength])
+	off += streamIdFlagLength
+	msg.Id = int64(sid)
+	msg.Type = ft
+	msg.End = end
+
+	data = data[off:]
+	if len(data) > 0 {
+		msg.Data = data
 	}
 	return msg, nil
 }

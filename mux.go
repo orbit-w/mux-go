@@ -151,7 +151,7 @@ func (mux *Multiplexer) recvLoop() {
 			return
 		}
 
-		msg, err = mux.codec.Decode(in)
+		msg, err = mux.codec.DecodeV2(in)
 		if err != nil {
 			err = NewDecodeErr(err)
 			return
