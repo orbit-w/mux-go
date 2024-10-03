@@ -22,13 +22,13 @@ go get github.com/orbit-w/mux-go
 
 ## Benchmark
 ```
-oos: darwin
+goos: darwin
 goarch: arm64
 pkg: github.com/orbit-w/mux-go
 BenchmarkConnMux
-BenchmarkConnMux-8   	   43083	     27426 ns/op	4779.16 MB/s	  674156 B/op	       7 allocs/op
+BenchmarkConnMux-8   	   56547	     19695 ns/op	6655.12 MB/s	  265818 B/op	       2 allocs/op
 PASS
-ok  	github.com/orbit-w/mux-go	5.556s
+
 ```
 
 
