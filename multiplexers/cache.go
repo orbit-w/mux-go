@@ -19,12 +19,21 @@ func newConnCache() *connCache {
 
 func (cc *connCache) Store(id int64, conn IConn) error {
 	cc.rw.Lock()
+	defer cc.rw.Unlock()
 	if cc.err != nil {
 		return cc.err
 	}
 	cc.conns[id] = conn
-	cc.rw.Unlock()
 	return nil
+}
+
+func (cc *connCache) Delete(id int64) {
+	cc.rw.Lock()
+	defer cc.rw.Unlock()
+	if cc.err != nil {
+		return
+	}
+	delete(cc.conns, id)
 }
 
 func (cc *connCache) OnClose(iter func(conn IConn)) {

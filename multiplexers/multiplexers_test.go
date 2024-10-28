@@ -160,7 +160,7 @@ func Test_PQ(t *testing.T) {
 	for i := 0; i < 10000; i++ {
 		wg.Add(1)
 		go func() {
-			conn := wrapConn(nil, idx, func() {
+			conn := wrapConn(nil, func() {
 				rw.Lock()
 				defer rw.Unlock()
 				queue.UpdatePriorityOp(idx, decrPriority)
@@ -219,4 +219,8 @@ func serveWithHandler(t assert.TestingT, stage string, recvHandler func(conn mux
 	err := server.ServeByConfig(host, recvHandler, muxServerConfig)
 	assert.NoError(t, err)
 	return server
+}
+
+func Test_Decr(t *testing.T) {
+	fmt.Println(^uint64(0))
 }

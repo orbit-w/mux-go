@@ -20,16 +20,14 @@ type IConn interface {
 
 type ConnWrapper struct {
 	mux.IConn
-	state  atomic.Uint32
-	idx    int64
-	cancel func()
+	state   atomic.Uint32
+	closeCB func()
 }
 
-func wrapConn(conn mux.IConn, _idx int64, cancel func()) IConn {
+func wrapConn(conn mux.IConn, callback func()) IConn {
 	return &ConnWrapper{
-		idx:    _idx,
-		IConn:  conn,
-		cancel: cancel,
+		IConn:   conn,
+		closeCB: callback,
 	}
 }
 
@@ -42,8 +40,8 @@ func (c *ConnWrapper) Close() error {
 		_ = c.IConn.CloseSend()
 	}
 
-	if c.cancel != nil {
-		c.cancel()
+	if c.closeCB != nil {
+		c.closeCB()
 	}
 	return nil
 }
