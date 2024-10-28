@@ -6,7 +6,6 @@ import (
 	"github.com/orbit-w/mux-go"
 	"io"
 	"log"
-	"runtime"
 	"sync/atomic"
 	"testing"
 )
@@ -18,7 +17,7 @@ import (
 */
 
 func Benchmark_ConcurrencySend_128K_Test(b *testing.B) {
-	benchmarkEcho(b, 1024*128, 5)
+	benchmarkEcho(b, 1024*128, 1)
 }
 
 func Benchmark_ConcurrencySend_64K_Test(b *testing.B) {
@@ -87,5 +86,5 @@ func benchmarkEcho(b *testing.B, size, num int) {
 	}
 
 	<-complete
-	runtime.GC()
+	//runtime.GC()
 }

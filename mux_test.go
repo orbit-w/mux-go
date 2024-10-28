@@ -277,6 +277,24 @@ func ServeWithHandler(t assert.TestingT, host string, handler func(conn IServerC
 	})
 }
 
+func serveWithHandler(t assert.TestingT, stage string, recvHandler func(conn IServerConn) error) *Server {
+	host := "localhost:0"
+	var muxServerConfig *MuxServerConfig
+
+	switch stage {
+	case "DEV":
+		muxServerConfig = DevelopmentServerConfig()
+	case "PROD":
+		muxServerConfig = ProductionServerConfig()
+	default:
+		muxServerConfig = DefaultServerConfig()
+	}
+	s := new(Server)
+	err := s.ServeByConfig(host, recvHandler, muxServerConfig)
+	assert.NoError(t, err)
+	return s
+}
+
 func Test_Serve(t *testing.T) {
 	s := new(Server)
 	assert.NoError(t, s.Stop())

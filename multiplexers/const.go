@@ -8,6 +8,6 @@ package multiplexers
 
 const (
 	MuxMaxConns       = 200
-	MuxCount          = 50
+	MuxCount          = 5
 	MaxIncomingPacket = 1<<18 - 1
 )
