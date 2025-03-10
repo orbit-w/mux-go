@@ -3,9 +3,10 @@ package multiplexers
 import (
 	"context"
 	"errors"
+	"sync/atomic"
+
 	"github.com/orbit-w/meteor/modules/net/transport"
 	"github.com/orbit-w/mux-go"
-	"sync/atomic"
 )
 
 /*
@@ -23,6 +24,23 @@ type Multiplexers struct {
 	balancer     *Balancer
 	multiplexers []mux.IMux
 	tempConns    *connCache
+}
+
+func New(host string, conf *Config) *Multiplexers {
+	if conf == nil {
+		conf = DefaultConfig()
+	}
+
+	m := &Multiplexers{
+		host:      host,
+		muxCount:  conf.MuxCount,
+		maxConns:  conf.MuxMaxConns,
+		tempConns: newConnCache(),
+		balancer:  NewBalancer(conf.MuxCount),
+	}
+
+	m.init()
+	return m
 }
 
 func NewWithDefaultConf(host string) *Multiplexers {

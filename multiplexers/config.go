@@ -11,8 +11,8 @@ type Config struct {
 	MuxCount    int //常驻mux数量
 }
 
-func DefaultConfig() Config {
-	return Config{
+func DefaultConfig() *Config {
+	return &Config{
 		MuxMaxConns: MuxMaxConns,
 		MuxCount:    MuxCount,
 	}
