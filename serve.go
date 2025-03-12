@@ -2,11 +2,10 @@ package mux
 
 import (
 	"context"
-	"github.com/orbit-w/meteor/modules/mlog"
+	"time"
+
 	"github.com/orbit-w/meteor/modules/net/network"
 	"github.com/orbit-w/meteor/modules/net/transport"
-	"github.com/spf13/viper"
-	"time"
 )
 
 /*
@@ -37,10 +36,6 @@ func (s *Server) ServeByConfig(addr string, handleLoop func(conn IServerConn) er
 	s.ctx = ctx
 	s.cancel = cancel
 	buildServerConfig(&conf)
-	conf.parse()
-
-	//根据日志等级/文件路径设置zap日志
-	mlog.SetBaseLogger(mlog.NewZapLogger())
 
 	tConf := conf.toTransportConfig()
 	ts, err := transport.ServeByConfig("tcp", addr, func(conn transport.IConn) {
@@ -78,8 +73,6 @@ type MuxServerConfig struct {
 	ReadTimeout       time.Duration
 	WriteTimeout      time.Duration
 	DialTimeout       time.Duration
-	LogDir            string
-	LogLevel          string
 }
 
 func (conf *MuxServerConfig) toTransportConfig() *transport.Config {
@@ -89,15 +82,6 @@ func (conf *MuxServerConfig) toTransportConfig() *transport.Config {
 		ReadTimeout:       conf.ReadTimeout,
 		WriteTimeout:      conf.WriteTimeout,
 	}
-}
-
-func (conf *MuxServerConfig) parse() {
-	//分析配置，设置viper全剧配置
-	if conf.LogDir != "" {
-		viper.Set(mlog.FlagLogDir, conf.LogDir)
-	}
-
-	viper.Set(mlog.FlagV, conf.LogLevel)
 }
 
 func buildServerConfig(conf **MuxServerConfig) {
@@ -116,17 +100,7 @@ func buildServerConfig(conf **MuxServerConfig) {
 	if (*conf).MaxIncomingPacket == 0 {
 		(*conf).MaxIncomingPacket = network.MaxIncomingPacket
 	}
-
-	//默认等级INFO
-	if (*conf).LogLevel == "" {
-		(*conf).LogLevel = "INFO"
-	}
-
 }
-
-const (
-	defaultLogDir = "./logs/mux.log"
-)
 
 func DefaultServerConfig() *MuxServerConfig {
 	return &MuxServerConfig{
@@ -135,8 +109,6 @@ func DefaultServerConfig() *MuxServerConfig {
 		ReadTimeout:       ReadTimeout,
 		DialTimeout:       DialTimeout,
 		WriteTimeout:      WriteTimeout,
-		LogLevel:          "INFO",
-		LogDir:            defaultLogDir,
 	}
 }
 
@@ -147,8 +119,6 @@ func ProductionServerConfig() *MuxServerConfig {
 		ReadTimeout:       ReadTimeout,
 		DialTimeout:       DialTimeout,
 		WriteTimeout:      WriteTimeout,
-		LogLevel:          "ERROR",
-		LogDir:            defaultLogDir,
 	}
 }
 
@@ -159,6 +129,5 @@ func DevelopmentServerConfig() *MuxServerConfig {
 		ReadTimeout:       ReadTimeout,
 		DialTimeout:       DialTimeout,
 		WriteTimeout:      WriteTimeout,
-		LogLevel:          "DEBUG",
 	}
 }
