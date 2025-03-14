@@ -73,11 +73,11 @@ func (m *Multiplexers) State() int32 {
 }
 
 // Dial 方法严格按照绑定的最小虚拟连接数优先选择多路复用器来创建虚拟连接
-func (m *Multiplexers) Dial() (IConn, error) {
+func (m *Multiplexers) Dial(ctx context.Context) (IConn, error) {
 	index := m.balancer.Next()
 
 	multiplexer := m.multiplexers[index]
-	vc, err := multiplexer.NewVirtualConn(context.Background())
+	vc, err := multiplexer.NewVirtualConn(ctx)
 	if err != nil {
 		if !errors.Is(err, mux.ErrVirtualConnUpLimit) {
 			return nil, err
@@ -120,8 +120,7 @@ func (m *Multiplexers) Close() {
 	}
 
 	// Iterate through the temporary map, closing each virtual connection
-	m.tempConns.OnClose(func(value IConn) {
-		conn := value.(IConn)
+	m.tempConns.OnClose(func(conn IConn) {
 		_ = conn.Close()
 	})
 }

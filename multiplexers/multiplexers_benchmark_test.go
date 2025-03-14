@@ -3,11 +3,12 @@ package multiplexers
 import (
 	"context"
 	"fmt"
-	"github.com/orbit-w/mux-go"
 	"io"
 	"log"
 	"sync/atomic"
 	"testing"
+
+	"github.com/orbit-w/mux-go"
 )
 
 /*
@@ -59,7 +60,7 @@ func benchmarkEcho(b *testing.B, size, num int) {
 	mus := NewWithDefaultConf(server.Addr())
 	conns := make([]IConn, num)
 	for i := 0; i < num; i++ {
-		conn, err := mus.Dial()
+		conn, err := mus.Dial(context.Background())
 		if err != nil {
 			b.Error(err)
 			return
