@@ -2,15 +2,13 @@ package mux
 
 import (
 	"context"
-	"fmt"
+	"io"
+	"sync/atomic"
+
 	"github.com/orbit-w/meteor/bases/misc/utils"
-	"github.com/orbit-w/meteor/modules/mlog"
 	"github.com/orbit-w/meteor/modules/net/packet"
 	"github.com/orbit-w/meteor/modules/net/transport"
 	"github.com/orbit-w/mux-go/metadata"
-	"go.uber.org/zap"
-	"io"
-	"sync/atomic"
 )
 
 /*
@@ -37,7 +35,6 @@ type Multiplexer struct {
 	virtualConns *VirtualConns
 	ctx          context.Context
 	cancel       context.CancelFunc
-	log          *mlog.ZapLogger
 
 	conf   MuxClientConfig //client side config
 	server *Server         //server side
@@ -60,7 +57,6 @@ func newMultiplexer(f context.Context, conn transport.IConn, isClient bool, serv
 		cancel:       cancel,
 		codec:        new(Codec),
 		server:       server,
-		log:          mlog.NewLogger("Multiplexer"),
 	}
 	return mux
 }
@@ -75,7 +71,6 @@ func newCliMultiplexer(f context.Context, conn transport.IConn, conf MuxClientCo
 		cancel:       cancel,
 		codec:        new(Codec),
 		conf:         conf,
-		log:          mlog.NewLogger("Multiplexer"),
 	}
 	return mux
 }
@@ -135,7 +130,6 @@ func (mux *Multiplexer) recvLoop() {
 		if err != nil {
 			if !(err == io.EOF || IsErrCanceled(err)) {
 				closeErr = err
-				mux.log.Error(fmt.Sprintf("conn disconnected: %s", err.Error()))
 			}
 		}
 		mux.virtualConns.OnClose(func(stream *VirtualConn) {
@@ -226,7 +220,7 @@ func handleDataServerSide(mux *Multiplexer, in *Msg) {
 			})
 			_ = mux.conn.Send(pack.Data())
 			packet.Return(pack)
-			mux.log.Error("[TcpServer] [func:handleStartFrame] metadata unmarshal failed", zap.Error(err))
+			//mux.log.Error("[TcpServer] [func:handleStartFrame] metadata unmarshal failed", zap.Error(err))
 			return
 		}
 

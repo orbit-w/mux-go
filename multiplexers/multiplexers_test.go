@@ -3,15 +3,16 @@ package multiplexers
 import (
 	"context"
 	"fmt"
-	pq "github.com/orbit-w/meteor/bases/container/priority_queue"
-	"github.com/orbit-w/mux-go"
-	"github.com/stretchr/testify/assert"
 	"io"
 	"log"
 	"sync"
 	"sync/atomic"
 	"testing"
 	"time"
+
+	pq "github.com/orbit-w/meteor/bases/container/priority_queue"
+	"github.com/orbit-w/mux-go"
+	"github.com/stretchr/testify/assert"
 )
 
 /*
@@ -53,7 +54,7 @@ func TestMultiplexers_Dial(t *testing.T) {
 	})
 
 	mus := NewWithDefaultConf(host)
-	conn, err := mus.Dial()
+	conn, err := mus.Dial(context.Background())
 	assert.NoError(t, err)
 
 	go func() {
@@ -114,7 +115,7 @@ func TestMultiplexers_Close(t *testing.T) {
 		wg.Add(1)
 		go func() {
 			for j := 0; j < 10000; j++ {
-				conn, err := mus.Dial()
+				conn, err := mus.Dial(context.Background())
 				if err == nil {
 					count.Add(1)
 					wg2.Add(1)
