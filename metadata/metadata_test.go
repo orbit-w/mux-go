@@ -71,3 +71,29 @@ func Test_Serialize(t *testing.T) {
 	}
 	t.Log(md2)
 }
+
+func TestMD_MarshalJSON(t *testing.T) {
+	md := New(map[string]any{
+		"key1": 10,
+		"key2": "value2",
+	})
+	data, err := Marshal(md)
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Log(string(data))
+
+	var md2 MD
+	err = Unmarshal(data, &md2)
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Log(md2)
+	v, exist := md2.GetInt("key1")
+	if !exist {
+		t.Fatal("key1 not exist")
+	}
+	if v != 10 {
+		t.Fatal("key1 value not int")
+	}
+}

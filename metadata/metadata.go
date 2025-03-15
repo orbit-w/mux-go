@@ -3,6 +3,8 @@ package metadata
 import (
 	"context"
 	"encoding/json"
+
+	"github.com/spf13/cast"
 )
 
 /*
@@ -37,6 +39,78 @@ func (ins *MD) Get(key string) (v any, exist bool) {
 	md := *ins
 	v, exist = md[key]
 	return
+}
+
+func (ins *MD) GetString(key string) (string, bool) {
+	v, exist := ins.Get(key)
+	if !exist {
+		return "", false
+	}
+	return cast.ToString(v), true
+}
+
+func (ins *MD) GetInt(key string) (int, bool) {
+	v, exist := ins.Get(key)
+	if !exist {
+		return 0, false
+	}
+	return cast.ToInt(v), true
+}
+
+func (ins *MD) GetInt64(key string) (int64, bool) {
+	v, exist := ins.Get(key)
+	if !exist {
+		return 0, false
+	}
+	return cast.ToInt64(v), true
+}
+
+func (ins *MD) GetInt32(key string) (int32, bool) {
+	v, exist := ins.Get(key)
+	if !exist {
+		return 0, false
+	}
+	return cast.ToInt32(v), true
+}
+
+func (ins *MD) GetInt16(key string) (int16, bool) {
+	v, exist := ins.Get(key)
+	if !exist {
+		return 0, false
+	}
+	return cast.ToInt16(v), true
+}
+
+func (ins *MD) GetInt8(key string) (int8, bool) {
+	v, exist := ins.Get(key)
+	if !exist {
+		return 0, false
+	}
+	return cast.ToInt8(v), true
+}
+
+func (ins *MD) GetFloat64(key string) (float64, bool) {
+	v, exist := ins.Get(key)
+	if !exist {
+		return 0, false
+	}
+	return cast.ToFloat64(v), true
+}
+
+func (ins *MD) GetFloat32(key string) (float32, bool) {
+	v, exist := ins.Get(key)
+	if !exist {
+		return 0, false
+	}
+	return cast.ToFloat32(v), true
+}
+
+func (ins *MD) GetBool(key string) (bool, bool) {
+	v, exist := ins.Get(key)
+	if !exist {
+		return false, false
+	}
+	return cast.ToBool(v), true
 }
 
 // NewIncomingContext creates a new context with incoming md attached.
