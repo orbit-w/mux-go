@@ -2,10 +2,12 @@ package mux
 
 import (
 	"context"
+	"io"
+	"sync/atomic"
+
 	"github.com/orbit-w/meteor/modules/net/network"
 	"github.com/orbit-w/meteor/modules/net/packet"
 	"github.com/orbit-w/meteor/modules/net/transport"
-	"sync/atomic"
 )
 
 /*
@@ -36,6 +38,7 @@ type IServerConn interface {
 	Send(data []byte) error
 	Recv(ctx context.Context) ([]byte, error)
 	Context() context.Context
+	Close()
 }
 
 type VirtualConn struct {
@@ -80,6 +83,10 @@ func (vc *VirtualConn) CloseSend() error {
 		return nil
 	}
 	return vc.send(nil, true)
+}
+
+func (vc *VirtualConn) Close() {
+	vc.rb.OnClose(io.EOF)
 }
 
 func (vc *VirtualConn) OnClose(err error) {
