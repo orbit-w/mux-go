@@ -106,11 +106,11 @@ func (vc *VirtualConn) send(data []byte, isLast bool) error {
 		if !vc.state.CompareAndSwap(ConnActive, ConnWriteDone) {
 			return ErrConnDone
 		}
-		return nil
-	}
 
-	if vc.state.Load() != ConnActive {
-		return ErrConnDone
+	} else {
+		if vc.state.Load() != ConnActive {
+			return ErrConnDone
+		}
 	}
 
 	msg := Msg{
