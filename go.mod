@@ -4,7 +4,7 @@ go 1.21.0
 
 require (
 	github.com/google/uuid v1.6.0
-	github.com/orbit-w/meteor v0.0.0-20250318125127-fb0485fec77e
+	github.com/orbit-w/meteor v0.0.0-20250328145938-0dbe1e1af77c
 	github.com/spf13/cast v1.7.1
 	github.com/spf13/viper v1.19.0
 	github.com/stretchr/testify v1.10.0

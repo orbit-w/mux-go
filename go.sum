@@ -25,6 +25,8 @@ github.com/natefinch/lumberjack v2.0.0+incompatible h1:4QJd3OLAMgj7ph+yZTuX13Ld4
 github.com/natefinch/lumberjack v2.0.0+incompatible/go.mod h1:Wi9p2TTF5DG5oU+6YfsmYQpsTIOm0B1VNzQg9Mw6nPk=
 github.com/orbit-w/meteor v0.0.0-20250318125127-fb0485fec77e h1:a61h9xqtF1OqUkYlarMEJsq4Wk8SwY97Rx596a/fRD0=
 github.com/orbit-w/meteor v0.0.0-20250318125127-fb0485fec77e/go.mod h1:Fn3Y7JgcGt2tYlc7NwAgFflgdHQj2OpcaPBac61SW0A=
+github.com/orbit-w/meteor v0.0.0-20250328145938-0dbe1e1af77c h1:QrnSox5+rG1kqNXBdtO9wdfccknXjg6xhDqQNsI12fs=
+github.com/orbit-w/meteor v0.0.0-20250328145938-0dbe1e1af77c/go.mod h1:Fn3Y7JgcGt2tYlc7NwAgFflgdHQj2OpcaPBac61SW0A=
 github.com/pelletier/go-toml/v2 v2.2.3 h1:YmeHyLY8mFWbdkNWwpr+qIL2bEqT0o95WSdkNHvL12M=
 github.com/pelletier/go-toml/v2 v2.2.3/go.mod h1:MfCQTFTvCcUyyvvwm1+G6H/jORL20Xlb6rzQu9GuUkc=
 github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2 h1:Jamvg5psRIccs7FGNTlIRMkT8wgtp5eCXdBlqhYGL6U=

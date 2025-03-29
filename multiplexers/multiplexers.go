@@ -60,10 +60,8 @@ func NewWithDefaultConf(host string) *Multiplexers {
 func (m *Multiplexers) init() {
 	for i := 0; i < m.muxCount; i++ {
 		ctx := context.Background()
-		conn := transport.DialContextWithOps(ctx, m.host, &transport.DialOption{
-			MaxIncomingPacket: MaxIncomingPacket,
-		})
-		multiplexer := mux.NewMultiplexer(ctx, conn, mux.NewClientConfig(m.maxConns))
+		conn := transport.DialWithOps(ctx, m.host, transport.WithMaxIncomingPacket(MaxIncomingPacket))
+		multiplexer := mux.NewMultiplexer(ctx, conn, mux.WithMaxVirtualConns(m.maxConns))
 		m.multiplexers = append(m.multiplexers, multiplexer)
 	}
 }
@@ -128,9 +126,7 @@ func (m *Multiplexers) Close() {
 func (m *Multiplexers) newTempConn() (IConn, error) {
 	// All multiplexers are at limit, create a new one
 	ctx := context.Background()
-	conn := transport.DialContextWithOps(ctx, m.host, &transport.DialOption{
-		MaxIncomingPacket: MaxIncomingPacket,
-	})
+	conn := transport.DialWithOps(ctx, m.host, transport.WithMaxIncomingPacket(MaxIncomingPacket))
 	multiplexer := mux.NewMultiplexer(ctx, conn)
 	vc, err := multiplexer.NewVirtualConn(ctx)
 	if err != nil {

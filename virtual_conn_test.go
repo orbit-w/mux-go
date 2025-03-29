@@ -2,9 +2,10 @@ package mux
 
 import (
 	"context"
+	"testing"
+
 	"github.com/orbit-w/meteor/modules/net/transport"
 	"github.com/stretchr/testify/assert"
-	"testing"
 )
 
 /*
@@ -16,7 +17,7 @@ import (
 func TestVirtualConn_Send(t *testing.T) {
 	host := "127.0.0.1:6800"
 	Serve(t, host, false, Prod)
-	conn := transport.DialContextWithOps(context.Background(), host)
+	conn := transport.DialWithOps(context.Background(), host)
 	multiplexer := NewMultiplexer(context.Background(), conn)
 
 	ivc, err := multiplexer.NewVirtualConn(context.Background())
@@ -31,7 +32,7 @@ func TestVirtualConn_Send(t *testing.T) {
 func TestVirtualConn_CloseSend(t *testing.T) {
 	host := "127.0.0.1:6800"
 	Serve(t, host, false, Prod)
-	conn := transport.DialContextWithOps(context.Background(), host)
+	conn := transport.DialWithOps(context.Background(), host)
 	multiplexer := NewMultiplexer(context.Background(), conn)
 
 	ivc, err := multiplexer.NewVirtualConn(context.Background())

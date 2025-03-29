@@ -6,34 +6,41 @@ package mux
    @2024 7月 周日 19:23
 */
 
+type Opt func(config *MuxClientConfig)
+
 type MuxClientConfig struct {
-	MaxVirtualConns int //最大流数
+	MaxVirtualConns      int //最大流数
+	DisconnectedCallback func(err error)
 }
 
 const (
 	maxVirtualConns = 200
 )
 
-func DefaultClientConfig() MuxClientConfig {
-	return MuxClientConfig{
+func DefaultClientConfig() *MuxClientConfig {
+	return &MuxClientConfig{
 		MaxVirtualConns: maxVirtualConns,
 	}
 }
 
-func NewClientConfig(maxVirtualConns int) MuxClientConfig {
-	return MuxClientConfig{
-		MaxVirtualConns: maxVirtualConns,
+func WithDisconnectedCallback(callback func(err error)) Opt {
+	return func(config *MuxClientConfig) {
+		config.DisconnectedCallback = callback
 	}
 }
 
-func parseConfig(params ...MuxClientConfig) MuxClientConfig {
-	if len(params) == 0 {
-		return DefaultClientConfig()
+func WithMaxVirtualConns(maxVirtualConns int) Opt {
+	return func(config *MuxClientConfig) {
+		config.MaxVirtualConns = maxVirtualConns
+	}
+}
+
+func parseConfig(config *MuxClientConfig, opts ...Opt) {
+	for _, opt := range opts {
+		opt(config)
 	}
 
-	conf := params[0]
-	if conf.MaxVirtualConns <= 0 {
-		conf.MaxVirtualConns = maxVirtualConns
+	if config.MaxVirtualConns <= 0 {
+		config.MaxVirtualConns = maxVirtualConns
 	}
-	return conf
 }

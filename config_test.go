@@ -3,9 +3,10 @@ package mux
 import (
 	"errors"
 	"fmt"
-	"github.com/stretchr/testify/assert"
 	"testing"
 	"time"
+
+	"github.com/stretchr/testify/assert"
 )
 
 /*
@@ -28,8 +29,9 @@ func Test_parseConfig(t *testing.T) {
 	fmt.Println(conf.ReadTimeout)
 	fmt.Println(conf.WriteTimeout)
 
-	c := NewClientConfig(-200)
-	c = parseConfig(c)
+	c := DefaultClientConfig()
+	WithMaxVirtualConns(-200)(c)
+	parseConfig(c)
 	fmt.Println(c.MaxVirtualConns)
 }
 

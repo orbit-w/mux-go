@@ -3,16 +3,17 @@ package mux
 import (
 	"context"
 	"fmt"
-	"github.com/google/uuid"
-	"github.com/orbit-w/meteor/modules/net/transport"
-	"github.com/orbit-w/mux-go/metadata"
-	"github.com/stretchr/testify/assert"
 	"io"
 	"log"
 	"sync"
 	"sync/atomic"
 	"testing"
 	"time"
+
+	"github.com/google/uuid"
+	"github.com/orbit-w/meteor/modules/net/transport"
+	"github.com/orbit-w/mux-go/metadata"
+	"github.com/stretchr/testify/assert"
 )
 
 /*
@@ -70,8 +71,8 @@ func Test_MaxVC(t *testing.T) {
 	host := "127.0.0.1:6800"
 	Serve(t, host, true, Dev)
 
-	conn := transport.DialContextWithOps(context.Background(), host)
-	multiplexer := NewMultiplexer(context.Background(), conn, DefaultClientConfig())
+	conn := transport.DialWithOps(context.Background(), host)
+	multiplexer := NewMultiplexer(context.Background(), conn, WithMaxVirtualConns(100))
 
 	v := atomic.Uint32{}
 	wg := sync.WaitGroup{}
@@ -97,7 +98,7 @@ func Test_MaxVC(t *testing.T) {
 func Test_VirtualConnBatchSend(t *testing.T) {
 	host := "127.0.0.1:6800"
 	Serve(t, host, false, Dev)
-	conn := transport.DialContextWithOps(context.Background(), host)
+	conn := transport.DialWithOps(context.Background(), host)
 	multiplexer := NewMultiplexer(context.Background(), conn)
 
 	vc, err := multiplexer.NewVirtualConn(context.Background())
@@ -170,7 +171,7 @@ func Test_Metadata(t *testing.T) {
 		}
 		return nil
 	})
-	conn := transport.DialContextWithOps(context.Background(), host)
+	conn := transport.DialWithOps(context.Background(), host)
 	multiplexer := NewMultiplexer(context.Background(), conn)
 
 	id := uuid.New().String()
@@ -202,7 +203,7 @@ func Test_Metadata(t *testing.T) {
 }
 
 func ClientTest(t assert.TestingT, host string, print bool) (multiplexer IMux, vc IConn) {
-	conn := transport.DialContextWithOps(context.Background(), host)
+	conn := transport.DialWithOps(context.Background(), host)
 	multiplexer = NewMultiplexer(context.Background(), conn)
 
 	var (

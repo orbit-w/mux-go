@@ -3,13 +3,14 @@ package mux
 import (
 	"context"
 	"fmt"
-	"github.com/orbit-w/meteor/modules/net/transport"
-	"github.com/stretchr/testify/assert"
 	"io"
 	"log"
 	"sync"
 	"sync/atomic"
 	"testing"
+
+	"github.com/orbit-w/meteor/modules/net/transport"
+	"github.com/stretchr/testify/assert"
 )
 
 /*
@@ -53,9 +54,7 @@ func BenchmarkConnMux(b *testing.B) {
 	ServeWithHandler(b, host, h)
 	server.SetHandler(h)
 
-	conn := transport.DialContextWithOps(context.Background(), host, &transport.DialOption{
-		MaxIncomingPacket: MaxIncomingPacket,
-	})
+	conn := transport.DialWithOps(context.Background(), host, transport.WithMaxIncomingPacket(MaxIncomingPacket))
 	multiplexer := NewMultiplexer(context.Background(), conn)
 
 	vc, err := multiplexer.NewVirtualConn(context.Background())
@@ -110,7 +109,7 @@ func benchmarkEcho(b *testing.B, size, num int) {
 
 	// Create a new multiplexer with default configuration
 	fmt.Println("Server Addr: ", server.Addr())
-	conn := transport.DialContextWithOps(context.Background(), server.Addr())
+	conn := transport.DialWithOps(context.Background(), server.Addr())
 	multiplexer := NewMultiplexer(context.Background(), conn)
 	conns := make([]IConn, num)
 	for i := 0; i < num; i++ {

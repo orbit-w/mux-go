@@ -36,12 +36,13 @@ type Multiplexer struct {
 	ctx          context.Context
 	cancel       context.CancelFunc
 
-	conf   MuxClientConfig //client side config
-	server *Server         //server side
+	conf   *MuxClientConfig //client side config
+	server *Server          //server side
 }
 
-func NewMultiplexer(f context.Context, conn transport.IConn, ops ...MuxClientConfig) IMux {
-	conf := parseConfig(ops...)
+func NewMultiplexer(f context.Context, conn transport.IConn, ops ...Opt) IMux {
+	conf := DefaultClientConfig()
+	parseConfig(conf, ops...)
 	mux := newCliMultiplexer(f, conn, conf)
 	go mux.recvLoop()
 	return mux
@@ -61,7 +62,7 @@ func newMultiplexer(f context.Context, conn transport.IConn, isClient bool, serv
 	return mux
 }
 
-func newCliMultiplexer(f context.Context, conn transport.IConn, conf MuxClientConfig) *Multiplexer {
+func newCliMultiplexer(f context.Context, conn transport.IConn, conf *MuxClientConfig) *Multiplexer {
 	ctx, cancel := context.WithCancel(f)
 	mux := &Multiplexer{
 		isClient:     true,
@@ -135,6 +136,8 @@ func (mux *Multiplexer) recvLoop() {
 		mux.virtualConns.OnClose(func(stream *VirtualConn) {
 			stream.OnClose(closeErr)
 		})
+
+		mux.handleDisconnected(closeErr)
 	}()
 
 	var msg Msg
@@ -251,4 +254,15 @@ func getName(mux *Multiplexer) string {
 		return handleNameClient
 	}
 	return handleNameServer
+}
+
+func (mux *Multiplexer) GetConfig() *MuxClientConfig {
+	return mux.conf
+}
+
+func (mux *Multiplexer) handleDisconnected(err error) {
+	if mux.conf.DisconnectedCallback != nil {
+		defer utils.RecoverPanic()
+		mux.conf.DisconnectedCallback(err)
+	}
 }

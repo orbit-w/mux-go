@@ -22,7 +22,7 @@ func main() {
 	parseConfig()
 
 	host := "127.0.0.1:6800"
-	conn := transport.DialContextWithOps(context.Background(), host)
+	conn := transport.DialWithOps(context.Background(), host)
 	multiplexer := mux.NewMultiplexer(context.Background(), conn)
 
 	vc, err := multiplexer.NewVirtualConn(context.Background())
